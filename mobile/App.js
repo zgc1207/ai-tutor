@@ -386,6 +386,14 @@ export default function App() {
       : `${knowledgePoint} 暂无今日复习任务`);
   }
 
+  function openKnowledgeAction(node) {
+    const hasMistake = (node.mistakes || 0) > 0 || node.status === 'red' || node.status === 'yellow';
+    setTab(hasMistake ? 'mistakes' : 'review');
+    setStatus(hasMistake
+      ? `已跳到错题本, 查看 ${node.name} 的相关错因`
+      : `${node.name} 暂无明显错题, 可继续查看复习计划`);
+  }
+
   function appendAnswerMessage(step) {
     setAnswerMessages(messages => messages.concat({
       id: step.messageId || `${Date.now()}`,
@@ -817,26 +825,45 @@ export default function App() {
       green: '已掌握',
       gray: '未开始',
     };
+    const statusTone = {
+      red: 'danger',
+      yellow: 'warning',
+      green: 'success',
+      gray: 'neutral',
+    };
     return h(
       View,
       { style: styles.card },
       h(Text, { style: styles.title }, '知识图谱'),
-      h(Text, { style: styles.subtitle }, '按当前账号错题状态标记薄弱点'),
+      h(Text, { style: styles.subtitle }, '按当前账号错题状态标记薄弱点, 可直接跳到错题或复习。'),
       h(Button, { label: '刷新知识图谱', onPress: loadKnowledgeTree, secondary: true }),
       knowledgeTree.length
         ? knowledgeTree.map(subject => h(
             View,
-            { key: subject.code, style: styles.highlight },
-            h(Text, { style: styles.listTitle }, subject.name),
+            { key: subject.code, style: styles.knowledgeSubject },
+            h(Text, { style: styles.sectionLabel }, subject.name),
             subject.children?.slice(0, 8).map(node => h(
               View,
-              { key: node.id, style: styles.treeNode },
-              h(Text, { style: styles.bodyText }, `${node.name} · ${statusLabel[node.status] || node.status} · ${node.mistakes || 0} 错题`),
+              { key: node.id, style: styles.knowledgeCard },
+              h(View, { style: styles.listHeader }, [
+                h(Text, { key: 'name', style: styles.listTitle }, node.name),
+                h(StatusPill, {
+                  key: 'status',
+                  label: statusLabel[node.status] || node.status || '未开始',
+                  tone: statusTone[node.status] || 'neutral',
+                }),
+              ]),
+              h(Text, { style: styles.bodyText }, `${node.mistakes || 0} 道相关错题`),
               node.children?.slice(0, 3).map(child => h(
                 Text,
                 { key: child.id, style: styles.treeChild },
                 `${child.name} · ${statusLabel[child.status] || child.status} · ${child.mistakes || 0}`,
               )),
+              h(Button, {
+                label: (node.mistakes || 0) > 0 || node.status === 'red' ? '看相关错题' : '查看复习计划',
+                onPress: () => openKnowledgeAction(node),
+                secondary: true,
+              }),
             )),
           ))
         : h(Text, { style: styles.empty }, '暂无知识图谱数据'),
@@ -1068,6 +1095,10 @@ const styles = StyleSheet.create({
     color: '#92400e',
     backgroundColor: '#fef3c7',
   },
+  statusPill_danger: {
+    color: '#991b1b',
+    backgroundColor: '#fee2e2',
+  },
   statusPill_success: {
     color: '#047857',
     backgroundColor: '#d1fae5',
@@ -1232,6 +1263,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
+  },
+  knowledgeSubject: {
+    marginTop: 12,
+  },
+  knowledgeCard: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   listTitle: {
     fontSize: 15,
