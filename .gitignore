@@ -1,6 +1,9 @@
 .DS_Store
 .obsidian/
 node_modules/
+mobile/.expo-home/
+mobile/.expo/
+mobile/.metro/
 .env
 .env.local
 server/node_modules/
