@@ -79,6 +79,7 @@ const requiredApiCalls = [
   '/dashboard',
   '/questions',
   '/review-tasks/today',
+  '/review-tasks/',
   '/uploads/images',
   '/ocr/extract',
   '/devices',
@@ -109,6 +110,8 @@ checks.push(appSource.includes('enterDemoMode')
   && appSource.includes('DEMO_DASHBOARD')
   && appSource.includes('DEMO_SAMPLE_QUESTIONS')
   && appSource.includes('当前流程')
+  && appSource.includes('answerReviewTask')
+  && appSource.includes('仍不会')
   && appSource.includes('体验演示')
   && appSource.includes('演示模式')
   ? pass('mobile.demoExperience', { entry: '体验演示' })

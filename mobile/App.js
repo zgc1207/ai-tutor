@@ -25,9 +25,24 @@ const DEMO_DASHBOARD = {
 };
 
 const DEMO_REVIEW_TASKS = [
-  { id: 'demo-review-1', knowledgePoint: '一元一次方程', cycleLabel: 'D1 今日复习' },
-  { id: 'demo-review-2', knowledgePoint: '一般过去时', cycleLabel: 'D3 巩固复习' },
-  { id: 'demo-review-3', knowledgePoint: '压强公式', cycleLabel: 'D7 间隔复习' },
+  {
+    id: 'demo-review-1',
+    knowledgePoint: '一元一次方程',
+    cycleLabel: 'D1 今日复习',
+    prompt: '先说出移项时为什么要变号。',
+  },
+  {
+    id: 'demo-review-2',
+    knowledgePoint: '一般过去时',
+    cycleLabel: 'D3 巩固复习',
+    prompt: '看到 yesterday 时, 先判断动词要不要变过去式。',
+  },
+  {
+    id: 'demo-review-3',
+    knowledgePoint: '压强公式',
+    cycleLabel: 'D7 间隔复习',
+    prompt: '先写出 P = F / S, 再统一单位。',
+  },
 ];
 
 const DEMO_MISTAKES = [
@@ -299,6 +314,55 @@ export default function App() {
     }
     const data = await run('加载知识图谱', () => api.getKnowledgeTree({ subject: 'all' }));
     if (data?.subjects) setKnowledgeTree(data.subjects);
+  }
+
+  async function answerReviewTask(task, correct) {
+    const taskTitle = task.errorRecord?.knowledgePoint || task.knowledgePoint || '复习任务';
+    if (demoMode) {
+      if (correct) {
+        setReviewTasks(tasks => tasks.filter(item => item.id !== task.id));
+        setMistakes(items => items.map(item => (
+          item.knowledgePoint === taskTitle ? { ...item, status: 'mastered' } : item
+        )));
+        setDashboard(current => ({
+          ...(current || DEMO_DASHBOARD),
+          today: {
+            ...((current || DEMO_DASHBOARD).today || {}),
+            reviews: Math.max(((current || DEMO_DASHBOARD).today?.reviews || 1) - 1, 0),
+          },
+        }));
+        setStatus(`演示: ${taskTitle} 已答对, 今日复习任务减少 1 个`);
+        return;
+      }
+
+      setReviewTasks(tasks => tasks.map(item => (
+        item.id === task.id
+          ? { ...item, cycleLabel: 'D1 重新复习', prompt: '仍不熟, 明天先从错因重新讲一遍。' }
+          : item
+      )));
+      setMistakes(items => {
+        const exists = items.some(item => item.knowledgePoint === taskTitle);
+        if (exists) return items.map(item => (
+          item.knowledgePoint === taskTitle
+            ? { ...item, status: 'reviewing', errorReason: '复习时仍不稳定, 已重置为 D1 复习。' }
+            : item
+        ));
+        return [{
+          id: `demo-mistake-${Date.now()}`,
+          knowledgePoint: taskTitle,
+          status: 'reviewing',
+          subject: { name: '复习' },
+          errorReason: '复习时仍不稳定, 已重置为 D1 复习。',
+        }].concat(items);
+      });
+      setStatus(`演示: ${taskTitle} 仍不会, 已重置复习节奏`);
+      return;
+    }
+
+    const result = await run(correct ? '提交答对结果' : '提交仍不会结果', () => (
+      api.answerReviewTask(task.id, { correct })
+    ));
+    if (result) await loadReview();
   }
 
   function appendAnswerMessage(step) {
@@ -615,6 +679,7 @@ export default function App() {
       View,
       { style: styles.card },
       h(Text, { style: styles.title }, '今日复习'),
+      h(Text, { style: styles.subtitle }, '答对会推进掌握状态; 仍不会会回到 D1 重新复习。'),
       h(Button, { label: '加载复习任务', onPress: loadReview, secondary: true }),
       reviewTasks.length
         ? reviewTasks.map(task => h(
@@ -622,6 +687,11 @@ export default function App() {
             { key: task.id, style: styles.listItem },
             h(Text, { style: styles.listTitle }, task.errorRecord?.knowledgePoint || task.knowledgePoint || '复习任务'),
             h(Text, { style: styles.listMeta }, task.cycle || task.cycleLabel || '待复习'),
+            task.prompt ? h(Text, { style: styles.bodyText }, task.prompt) : null,
+            h(View, { style: styles.actionRow }, [
+              h(Button, { key: 'correct', label: '答对', onPress: () => answerReviewTask(task, true), secondary: true }),
+              h(Button, { key: 'wrong', label: '仍不会', onPress: () => answerReviewTask(task, false), secondary: true }),
+            ]),
           ))
         : h(Text, { style: styles.empty }, '暂无待复习任务'),
     );

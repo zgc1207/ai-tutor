@@ -68,6 +68,13 @@ export function createApiClient({ baseUrl, sessionToken, onSessionToken }) {
       return request('/review-tasks/today');
     },
 
+    answerReviewTask(taskId, { correct }) {
+      return request(`/review-tasks/${taskId}/answer`, {
+        method: 'POST',
+        body: { correct },
+      });
+    },
+
     getMistakes() {
       return request('/mistakes');
     },
