@@ -34,7 +34,15 @@ export function createApiClient({ baseUrl, sessionToken, onSessionToken }) {
       });
     },
 
-    async loginWithOtp({ phone, code, inviteCode, nickname = '学生', grade = '初中' }) {
+    async loginWithOtp({
+      phone,
+      code,
+      inviteCode,
+      nickname = '学生',
+      grade = '初中',
+      consentAccepted = false,
+      policyVersion = 'internal-test-v1',
+    }) {
       const result = await request('/auth/otp/login', {
         method: 'POST',
         body: {
@@ -43,9 +51,9 @@ export function createApiClient({ baseUrl, sessionToken, onSessionToken }) {
           inviteCode: inviteCode || undefined,
           nickname,
           grade,
-          gradeStage: 'middle',
-          consentAccepted: true,
-          policyVersion: 'internal-test-v1',
+          gradeStage: 'junior',
+          consentAccepted,
+          policyVersion,
         },
       });
       if (result.sessionToken && onSessionToken) onSessionToken(result.sessionToken);

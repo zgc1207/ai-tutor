@@ -24,6 +24,8 @@ const DEMO_DASHBOARD = {
   },
 };
 
+const POLICY_VERSION = 'internal-test-v1';
+
 const DEMO_REVIEW_TASKS = [
   {
     id: 'demo-review-1',
@@ -219,6 +221,7 @@ export default function App() {
   const [phone, setPhone] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  const [consentAccepted, setConsentAccepted] = useState(false);
   const [status, setStatus] = useState('配置后端 API 后开始内测登录');
   const [demoMode, setDemoMode] = useState(false);
   const [tab, setTab] = useState('home');
@@ -272,6 +275,10 @@ export default function App() {
   }
 
   async function requestOtp() {
+    if (!consentAccepted) {
+      setStatus('请先勾选同意用户协议、隐私政策和未成年人使用说明');
+      return;
+    }
     await run('发送验证码', () => api.requestOtp({ phone, inviteCode }));
   }
 
@@ -313,8 +320,18 @@ export default function App() {
   }
 
   async function login() {
+    if (!consentAccepted) {
+      setStatus('请先勾选同意用户协议、隐私政策和未成年人使用说明');
+      return;
+    }
     await saveApiBase(apiBase);
-    const result = await run('登录', () => api.loginWithOtp({ phone, code: otpCode, inviteCode }));
+    const result = await run('登录', () => api.loginWithOtp({
+      phone,
+      code: otpCode,
+      inviteCode,
+      consentAccepted,
+      policyVersion: POLICY_VERSION,
+    }));
     if (result?.sessionToken) await saveSessionToken(result.sessionToken);
     setTab('home');
   }
@@ -727,6 +744,16 @@ export default function App() {
       h(Text, { style: styles.hint }, '真机 Expo Go 不能用 localhost, 请运行 npm run api:local 后填入局域网地址。'),
       h(Field, { label: '手机号', value: phone, onChangeText: setPhone, placeholder: '内测手机号' }),
       h(Field, { label: '邀请码', value: inviteCode, onChangeText: setInviteCode, placeholder: '可选' }),
+      h(TouchableOpacity, {
+        style: styles.consentBox,
+        onPress: () => setConsentAccepted(value => !value),
+      }, [
+        h(Text, { key: 'mark', style: [styles.consentMark, consentAccepted && styles.consentMarkActive] }, consentAccepted ? '✓' : ''),
+        h(View, { key: 'copy', style: styles.consentCopy },
+          h(Text, { style: styles.consentTitle }, '我已阅读并同意内测协议'),
+          h(Text, { style: styles.bodyText }, `同意用户协议、隐私政策和未成年人使用说明, 版本 ${POLICY_VERSION}。AI 仅作学习辅助, 不替代教师、教材或官方答案。`),
+        ),
+      ]),
       h(Button, { label: '发送验证码', onPress: requestOtp, secondary: true }),
       h(Field, { label: '验证码', value: otpCode, onChangeText: setOtpCode, placeholder: '6 位验证码' }),
       h(Button, { label: '登录', onPress: login }),
@@ -1213,6 +1240,40 @@ const styles = StyleSheet.create({
   sampleChipText: {
     fontSize: 12,
     color: '#374151',
+    fontWeight: '700',
+  },
+  consentBox: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    backgroundColor: '#f9fafb',
+  },
+  consentMark: {
+    width: 22,
+    height: 22,
+    overflow: 'hidden',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#9ca3af',
+    textAlign: 'center',
+    lineHeight: 20,
+    color: '#ffffff',
+    fontWeight: '700',
+  },
+  consentMarkActive: {
+    borderColor: '#4f46e5',
+    backgroundColor: '#4f46e5',
+  },
+  consentCopy: {
+    flex: 1,
+  },
+  consentTitle: {
+    fontSize: 13,
+    color: '#111827',
     fontWeight: '700',
   },
   apiPresetRow: {
