@@ -1,0 +1,10 @@
+.DS_Store
+.obsidian/
+node_modules/
+.env
+.env.local
+server/node_modules/
+server/.env
+server/.env.local
+server/uploads/
+server/evals/reports/

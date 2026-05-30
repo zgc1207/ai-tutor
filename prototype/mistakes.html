@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AI 家教">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>错题本 - AI 家庭教师</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="page-header">
+    <div class="page-header-title">错题本</div>
+  </div>
+
+  <div class="tabs-row">
+    <div class="tab-text active" data-view="list">错题列表</div>
+    <div class="tab-text" data-view="tree">知识图谱</div>
+  </div>
+
+  <div class="subject-chips" id="subjectChips"></div>
+
+  <div id="listView">
+    <div class="mistake-list" id="mistakeList"></div>
+  </div>
+
+  <div id="treeView" style="display:none;">
+    <div class="legend">
+      <div class="legend-item"><span class="tree-status red"></span>薄弱</div>
+      <div class="legend-item"><span class="tree-status yellow"></span>学习中</div>
+      <div class="legend-item"><span class="tree-status green"></span>已掌握</div>
+      <div class="legend-item"><span class="tree-status gray"></span>未涉及</div>
+    </div>
+    <div class="tree-view" id="treeContent"></div>
+  </div>
+
+  <div id="tabBarSlot"></div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireLogin()) { /* redirecting */ }
+
+    let currentSubject = new URLSearchParams(location.search).get('subject') || 'all';
+    let currentView = 'list';
+    let mistakeItems = getCurrentMistakes();
+    let knowledgeTreeItems = MOCK_KNOWLEDGE_TREE;
+    let mistakesLoadError = '';
+    let knowledgeTreeLoadError = '';
+    let usingServerMistakes = false;
+    let usingServerTree = false;
+
+    const chipsEl = document.getElementById('subjectChips');
+    const allChips = [
+      { k: 'all', name: '全部', icon: '' },
+      ...DEFAULT_SUBJECTS.map(k => ({ k, name: SUBJECTS[k].name, icon: SUBJECTS[k].icon })),
+    ];
+
+    function renderChips() {
+      chipsEl.innerHTML = allChips.map(c => `
+        <div class="chip ${c.k === currentSubject ? 'active' : ''}" data-k="${c.k}">
+          ${c.icon} ${c.name}
+        </div>
+      `).join('');
+      $$('.chip', chipsEl).forEach(el => {
+        el.addEventListener('click', () => {
+          currentSubject = el.dataset.k;
+          renderChips();
+          renderCurrentView();
+        });
+      });
+    }
+
+    $$('.tab-text').forEach(t => {
+      t.addEventListener('click', () => {
+        $$('.tab-text').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        currentView = t.dataset.view;
+        document.getElementById('listView').style.display = currentView === 'list' ? 'block' : 'none';
+        document.getElementById('treeView').style.display = currentView === 'tree' ? 'block' : 'none';
+        renderCurrentView();
+      });
+    });
+
+    function renderCurrentView() {
+      if (currentView === 'list') renderMistakeList();
+      else renderTree();
+    }
+
+    function renderMistakeList() {
+      const list = document.getElementById('mistakeList');
+      const items = mistakeItems.filter(m => currentSubject === 'all' || m.subject === currentSubject);
+      if (items.length === 0) {
+        list.innerHTML = `
+          <div class="empty-tip" style="padding-top:60px;">
+            <div class="empty-tip-emoji">🎉</div>
+            <div class="empty-tip-text">这门科目还没有错题</div>
+            <div class="empty-tip-sub">继续保持!</div>
+          </div>
+        `;
+        return;
+      }
+      const statusLabel = { red: '薄弱', yellow: '学习中', green: '已掌握' };
+      list.innerHTML = items.map(m => {
+        const s = SUBJECTS[m.subject] || SUBJECTS.math;
+        return `
+          <div class="mistake-item" onclick="location.href='review.html?from=${m.id}'">
+            <div class="mistake-head">
+              <div class="mistake-title">${m.title}</div>
+              <span class="mistake-status ${m.status}">${statusLabel[m.status]}</span>
+            </div>
+            <div class="mistake-meta">
+              <span>${s.icon} ${s.name}</span>
+              <span>·</span>
+              <span>${m.addedAt}</span>
+              <span>·</span>
+              <span>第 ${m.reviewDay} 天复习</span>
+            </div>
+            <div class="mistake-kp">🎯 ${m.knowledgePoint}</div>
+            <div class="mistake-reason"><strong>错因:</strong> ${m.errorReason}</div>
+          </div>
+        `;
+      }).join('') + `
+        ${usingServerMistakes ? '<div style="font-size:12px; color:var(--gray-500); padding:12px 16px; text-align:center;">已连接后端错题数据</div>' : ''}
+        ${mistakesLoadError ? `<div style="font-size:12px; color:var(--danger); padding:12px 16px; text-align:center;">后端错题加载失败, 当前展示本地演示数据:${mistakesLoadError}</div>` : ''}
+      `;
+    }
+
+    function renderTree() {
+      const container = document.getElementById('treeContent');
+      const subjects = currentSubject === 'all' ? DEFAULT_SUBJECTS : [currentSubject];
+      container.innerHTML = subjects.map(k => {
+        const tree = knowledgeTreeItems[k];
+        if (!tree) return '';
+        return `
+          <div style="margin-bottom:20px;">
+            <div style="font-size:14px; color:var(--gray-600); margin-bottom:8px; padding:0 4px;">
+              ${SUBJECTS[k].icon} ${tree.name}
+            </div>
+            ${renderNodes(tree.children)}
+          </div>
+        `;
+      }).join('') + `
+        ${usingServerTree ? '<div style="font-size:12px; color:var(--gray-500); padding:12px 16px; text-align:center;">已连接后端知识图谱</div>' : ''}
+        ${knowledgeTreeLoadError ? `<div style="font-size:12px; color:var(--danger); padding:12px 16px; text-align:center;">后端知识图谱加载失败, 当前展示本地演示数据:${knowledgeTreeLoadError}</div>` : ''}
+      `;
+      bindTreeToggle();
+    }
+
+    function renderNodes(nodes) {
+      return nodes.map(n => {
+        const hasChildren = n.children && n.children.length > 0;
+        if (!hasChildren) {
+          return `
+            <div class="tree-row-leaf">
+              <span class="tree-status ${n.status}"></span>
+              <span class="tree-name">${n.name}</span>
+              ${n.mistakes ? `<span class="tree-mistake-count">${n.mistakes} 题</span>` : ''}
+            </div>
+          `;
+        }
+        return `
+          <div class="tree-node">
+            <div class="tree-row" data-toggle>
+              <span class="tree-caret">▸</span>
+              <span class="tree-status ${n.status}"></span>
+              <span class="tree-name">${n.name}</span>
+              ${countMistakes(n) ? `<span class="tree-mistake-count">${countMistakes(n)} 题</span>` : ''}
+            </div>
+            <div class="tree-children">
+              ${renderNodes(n.children)}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function countMistakes(node) {
+      if (usingServerTree && typeof node.mistakes === 'number') return node.mistakes;
+      let count = mistakeItems.filter(m => (
+        m.knowledgePoint.includes(node.name) ||
+        node.name.includes(m.knowledgePoint) ||
+        m.knowledgePath.includes(node.name)
+      )).length;
+      if (node.children) node.children.forEach(c => count += countMistakes(c));
+      return count;
+    }
+
+    function bindTreeToggle() {
+      $$('[data-toggle]').forEach(row => {
+        row.addEventListener('click', () => {
+          const caret = row.querySelector('.tree-caret');
+          const children = row.nextElementSibling;
+          caret.classList.toggle('open');
+          children.classList.toggle('open');
+        });
+      });
+    }
+
+    async function loadMistakes() {
+      if (!ApiClient.isEnabled()) return;
+      try {
+        if (!ApiClient.getServerUserId()) {
+          await ApiClient.login(UserStore.get());
+        }
+        mistakeItems = await ApiClient.getMistakes();
+        usingServerMistakes = true;
+      } catch (error) {
+        mistakesLoadError = error.message;
+        usingServerMistakes = false;
+      }
+    }
+
+    async function loadKnowledgeTree() {
+      if (!ApiClient.isEnabled()) return;
+      try {
+        if (!ApiClient.getServerUserId()) {
+          await ApiClient.login(UserStore.get());
+        }
+        knowledgeTreeItems = await ApiClient.getKnowledgeTree('all');
+        usingServerTree = true;
+      } catch (error) {
+        knowledgeTreeLoadError = error.message;
+        usingServerTree = false;
+      }
+    }
+
+    (async function initMistakes() {
+      await loadMistakes();
+      await loadKnowledgeTree();
+      renderChips();
+      renderCurrentView();
+    })();
+    document.getElementById('tabBarSlot').outerHTML = renderTabBar('mistakes');
+  </script>
+</body>
+</html>

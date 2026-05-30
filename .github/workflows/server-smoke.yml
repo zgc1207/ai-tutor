@@ -1,0 +1,104 @@
+name: Server API Smoke
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  smoke-api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ai_tutor
+          POSTGRES_PASSWORD: ai_tutor
+          POSTGRES_DB: ai_tutor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ai_tutor -d ai_tutor"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ai_tutor:ai_tutor@localhost:5432/ai_tutor?schema=public
+      BODY_LIMIT_BYTES: 8388608
+      SECURITY_HEADERS_ENABLED: true
+      RATE_LIMIT_ENABLED: true
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX: 300
+      ADMIN_TOKEN: ci-smoke-admin-token
+      INTERNAL_TEST_INVITE_CODE: ci-smoke-invite
+      AUTH_OTP_SECRET: ci-smoke-otp-secret
+      AUTH_OTP_DEV_MODE: true
+      AUTH_OTP_DELIVERY_PROVIDER: dev
+      AUTH_OTP_DELIVERY_ENDPOINT: ""
+      AUTH_OTP_DELIVERY_TOKEN: ""
+      AUTH_OTP_TTL_MINUTES: 10
+      AUTH_OTP_MAX_ATTEMPTS: 5
+      AUTH_OTP_RETENTION_DAYS: 7
+      AUTH_OTP_MIN_INTERVAL_SECONDS: 60
+      PLUS_PRICE_CENTS_MONTHLY: 2900
+      PAYMENT_PROVIDER: dev
+      PAYMENT_PROVIDER_ENDPOINT: ""
+      PAYMENT_PROVIDER_TOKEN: ""
+      PAYMENT_WEBHOOK_SECRET: ci-smoke-payment-secret
+      PAYMENT_READY: false
+      PUSH_PROVIDER: dev
+      PUSH_ENDPOINT: ""
+      PUSH_TOKEN: ""
+      PUSH_READY: false
+      OPS_MAX_AI_FAILURE_RATE: 0.08
+      OPS_MAX_DAILY_AI_COST: 100
+      OPS_MIN_REVIEW_COMPLETION_RATE: 0.5
+      OPS_MIN_AVERAGE_FEEDBACK_RATING: 3.5
+      ALLOW_LEGACY_USER_ID_AUTH: false
+      ALLOW_MOCK_LOGIN: true
+      LLM_PROVIDER: mock
+      OCR_PROVIDER: mock
+      ALLOW_PUBLIC_UPLOAD_ACCESS: true
+      UPLOAD_STORAGE_PROVIDER: local
+      UPLOAD_STORAGE_ENDPOINT: ""
+      UPLOAD_STORAGE_TOKEN: ""
+      CORS_ALLOWED_ORIGINS: ""
+      DAILY_QUESTION_LIMIT: 50
+      DAILY_AI_STEP_LIMIT: 150
+      UPLOAD_RETENTION_DAYS: 30
+      AI_EVENT_RETENTION_DAYS: 180
+      EXPIRED_SESSION_RETENTION_DAYS: 30
+      NOTIFICATION_RETENTION_DAYS: 180
+      DISABLED_DEVICE_TOKEN_RETENTION_DAYS: 180
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Initialize database
+        run: npm run db:setup
+
+      - name: Check database
+        run: npm run db:check
+
+      - name: Check retention cleanup
+        run: npm run retention:cleanup
+
+      - name: Check reminder scheduler
+        run: npm run reminders:run -- --time 19:30 --dry-run
+
+      - name: Run API smoke
+        run: npm run smoke:api

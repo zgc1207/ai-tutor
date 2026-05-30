@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "AI 家庭教师",
+    "slug": "ai-tutor",
+    "scheme": "aitutor",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-image-picker",
+      "expo-notifications",
+      "expo-secure-store"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.aitutor",
+      "infoPlist": {
+        "NSCameraUsageDescription": "用于拍摄题目图片并识别题干。",
+        "NSPhotoLibraryUsageDescription": "用于选择题目图片并识别题干。"
+      }
+    },
+    "android": {
+      "package": "com.example.aitutor"
+    },
+    "extra": {
+      "defaultApiBaseUrl": ""
+    }
+  }
+}

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AI 家教">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>学习报告 - AI 家庭教师</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="page-header">
+    <button class="back-btn" onclick="history.back()">‹</button>
+    <div class="page-header-title">学习报告</div>
+  </div>
+
+  <main class="content">
+    <div class="section">
+      <div class="review-banner" style="cursor:default;">
+        <div class="review-banner-left">
+          <div class="review-banner-icon">📊</div>
+          <div>
+            <div class="review-banner-title" id="reportTitle">最近 7 天学习报告</div>
+            <div class="review-banner-sub" id="reportSub">按当前登录学生账号生成</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">核心指标</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-num" id="questionCount">0</div>
+          <div class="stat-label">本周提问</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num danger" id="mistakeCount">0</div>
+          <div class="stat-label">新增错题</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num success" id="reviewRate">0%</div>
+          <div class="stat-label">复习完成率</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">科目分布</div>
+      <div class="recent-list" id="subjectList"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">薄弱知识点</div>
+      <div class="mistake-list" id="weakList"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">本周建议</div>
+      <div class="recent-list" id="suggestionList"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">家长摘要</div>
+      <div class="recent-list" id="parentSummary"></div>
+    </div>
+  </main>
+
+  <div id="tabBarSlot"></div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireLogin()) { /* redirecting */ }
+
+    function percent(value) {
+      return `${Math.round((value || 0) * 100)}%`;
+    }
+
+    function buildLocalReport() {
+      const user = UserStore.get();
+      const mistakes = getCurrentMistakes();
+      const reviews = getCurrentReviewTasks();
+      return {
+        generatedAt: new Date().toISOString(),
+        student: {
+          nickname: user.nickname,
+          grade: user.grade,
+          gradeStage: user.gradeStage,
+        },
+        summary: {
+          questionCount: getCurrentRecent().length,
+          newMistakeCount: mistakes.length,
+          dueReviewCount: reviews.length,
+          completedReviewCount: 0,
+          reviewCompletionRate: 0,
+          reviewCorrectRate: 0,
+        },
+        subjectBreakdown: {
+          questions: DEFAULT_SUBJECTS.map(k => ({
+            subject: k,
+            subjectName: SUBJECTS[k].name,
+            value: getCurrentRecent().filter(item => item.subject === k).length,
+          })).filter(item => item.value > 0),
+          mistakes: DEFAULT_SUBJECTS.map(k => ({
+            subject: k,
+            subjectName: SUBJECTS[k].name,
+            value: mistakes.filter(item => item.subject === k).length,
+          })).filter(item => item.value > 0),
+          reviews: DEFAULT_SUBJECTS.map(k => ({
+            subject: k,
+            subjectName: SUBJECTS[k].name,
+            value: reviews.filter(item => item.subject === k).length,
+            completed: 0,
+          })).filter(item => item.value > 0),
+        },
+        weakPoints: mistakes.slice(0, 6).map(item => ({
+          id: item.id,
+          subject: item.subject,
+          subjectName: SUBJECTS[item.subject].name,
+          knowledgePoint: item.knowledgePoint,
+          errorReason: item.errorReason,
+          status: item.status === 'red' ? 'weak' : item.status === 'yellow' ? 'learning' : 'mastered',
+        })),
+        suggestions: [
+          '优先完成今日复习任务, 用变式题确认是否真的掌握。',
+          mistakes[0] ? `本周先集中巩固「${mistakes[0].knowledgePoint}」。` : '当前没有明显薄弱点, 可以增加综合练习。',
+          '家长可以重点观察孩子是否能说清错因, 而不是只看答案对错。',
+        ],
+        parentReport: {
+          headline: '本地演示数据仅供走查, 接入后端后会生成家长摘要。',
+          actionItems: [
+            '关注孩子是否能讲清错因, 不只看答案对错。',
+            '固定一个较轻的复习时间, 避免临睡前打扰。',
+          ],
+        },
+      };
+    }
+
+    async function loadReport() {
+      if (!ApiClient.isEnabled()) return buildLocalReport();
+      try {
+        if (!ApiClient.getServerUserId()) {
+          await ApiClient.login(UserStore.get());
+        }
+        const [weekly, parent] = await Promise.all([
+          ApiClient.getWeeklyReport(),
+          ApiClient.getParentWeeklyReport(),
+        ]);
+        weekly.parentReport = parent;
+        return weekly;
+      } catch (error) {
+        const report = buildLocalReport();
+        report.loadError = error.message;
+        return report;
+      }
+    }
+
+    function renderReport(report) {
+      const user = UserStore.get();
+      document.getElementById('reportTitle').textContent = `${user.nickname}的最近 7 天学习报告`;
+      document.getElementById('reportSub').textContent = report.loadError
+        ? `后端报告加载失败, 当前展示本地演示数据:${report.loadError}`
+        : '按当前登录学生账号生成, 数据不会跨账号展示';
+
+      document.getElementById('questionCount').textContent = report.summary.questionCount;
+      document.getElementById('mistakeCount').textContent = report.summary.newMistakeCount;
+      document.getElementById('reviewRate').textContent = percent(report.summary.reviewCompletionRate);
+
+      const subjectList = document.getElementById('subjectList');
+      const subjects = DEFAULT_SUBJECTS.map(k => {
+        const q = (report.subjectBreakdown.questions || []).find(item => item.subject === k)?.value || 0;
+        const m = (report.subjectBreakdown.mistakes || []).find(item => item.subject === k)?.value || 0;
+        const r = (report.subjectBreakdown.reviews || []).find(item => item.subject === k)?.value || 0;
+        return { k, q, m, r };
+      }).filter(item => item.q || item.m || item.r);
+      subjectList.innerHTML = subjects.length ? subjects.map(item => {
+        const s = SUBJECTS[item.k] || SUBJECTS.math;
+        return `
+          <div class="recent-item" onclick="location.href='mistakes.html?subject=${item.k}'">
+            <div class="recent-icon">${s.icon}</div>
+            <div class="recent-info">
+              <div class="recent-title">${s.name}</div>
+              <div class="recent-meta">提问 ${item.q} · 新错题 ${item.m} · 到期复习 ${item.r}</div>
+            </div>
+            <span class="recent-status mistake">查看</span>
+          </div>
+        `;
+      }).join('') : '<div class="empty-tip-text" style="padding:16px;">本周还没有学习数据</div>';
+
+      const weakList = document.getElementById('weakList');
+      const statusLabel = { weak: '薄弱', learning: '学习中', mastered: '已掌握' };
+      const statusClass = { weak: 'red', learning: 'yellow', mastered: 'green' };
+      weakList.innerHTML = report.weakPoints.length ? report.weakPoints.map(item => {
+        const s = SUBJECTS[item.subject] || SUBJECTS.math;
+        const cls = statusClass[item.status] || 'red';
+        return `
+          <div class="mistake-item">
+            <div class="mistake-head">
+              <div class="mistake-title">${item.knowledgePoint}</div>
+              <span class="mistake-status ${cls}">${statusLabel[item.status] || '薄弱'}</span>
+            </div>
+            <div class="mistake-meta">${s.icon} ${item.subjectName || s.name}</div>
+            <div class="mistake-reason"><strong>错因:</strong> ${item.errorReason}</div>
+          </div>
+        `;
+      }).join('') : '<div class="empty-tip-text" style="padding:16px;">当前没有明显薄弱点</div>';
+
+      document.getElementById('suggestionList').innerHTML = report.suggestions.map((text, index) => `
+        <div class="recent-item">
+          <div class="recent-icon">${index + 1}</div>
+          <div class="recent-info">
+            <div class="recent-title">${text}</div>
+          </div>
+        </div>
+      `).join('');
+
+      const parent = report.parentReport || {};
+      const parentItems = [
+        parent.headline,
+        ...(parent.actionItems || []),
+      ].filter(Boolean);
+      document.getElementById('parentSummary').innerHTML = parentItems.map((text, index) => `
+        <div class="recent-item">
+          <div class="recent-icon">${index === 0 ? '家' : index}</div>
+          <div class="recent-info">
+            <div class="recent-title">${text}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    (async function initReport() {
+      const report = await loadReport();
+      renderReport(report);
+    })();
+    document.getElementById('tabBarSlot').outerHTML = renderTabBar('me');
+  </script>
+</body>
+</html>

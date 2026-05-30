@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AI 家教">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>提问 - AI 家庭教师</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="ask-page">
+
+  <div class="page-header">
+    <div class="page-header-back" onclick="location.href='index.html'">‹</div>
+    <div class="page-header-title">AI 答疑</div>
+    <div class="page-header-action" id="newAskBtn" style="display:none;">新问题</div>
+  </div>
+
+  <div id="askContainer" style="flex:1; display:flex; flex-direction:column;">
+    <div id="emptyState">
+      <div class="empty-tip">
+        <div class="empty-tip-emoji">🤔</div>
+        <div class="empty-tip-text">遇到不会的题?</div>
+        <div class="empty-tip-sub">我不会直接给答案,会陪你一步步想明白</div>
+      </div>
+
+      <div class="input-methods">
+        <div class="input-method" onclick="startWithPhoto()">
+          <div class="input-method-icon photo">📷</div>
+          <div class="input-method-label">拍照识题</div>
+        </div>
+        <div class="input-method" onclick="startWithVoice()">
+          <div class="input-method-icon voice">🎙️</div>
+          <div class="input-method-label">语音提问</div>
+        </div>
+        <div class="input-method" onclick="focusText()">
+          <div class="input-method-icon text">✏️</div>
+          <div class="input-method-label">文字输入</div>
+        </div>
+      </div>
+
+      <div style="margin:8px 16px; font-size:12px; color:var(--gray-500);">试试这个示例题</div>
+      <div class="question-card" onclick="startDemo()" style="cursor:pointer;">
+        <span class="question-card-label">📐 数学 · 示例</span>
+        <div class="question-card-text">求二次函数 y = x² − 4x + 3 的顶点坐标</div>
+      </div>
+    </div>
+
+    <div id="askContent" style="display:none; flex-direction:column; flex:1;">
+      <div id="questionCardSlot"></div>
+      <div class="chat-stream" id="chatStream"></div>
+    </div>
+  </div>
+
+  <div class="compose">
+    <button class="compose-btn" onclick="startWithPhoto()" title="拍照">📷</button>
+    <input class="compose-input" id="composeInput" placeholder="输入题目或追问...">
+    <button class="compose-btn primary" onclick="submitText()">→</button>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/ai-script.js"></script>
+  <script>
+    if (!requireLogin()) { /* redirecting */ }
+
+    const emptyState = document.getElementById('emptyState');
+    const askContent = document.getElementById('askContent');
+    const chatStream = document.getElementById('chatStream');
+    const questionCardSlot = document.getElementById('questionCardSlot');
+    const composeInput = document.getElementById('composeInput');
+    const newAskBtn = document.getElementById('newAskBtn');
+
+    let currentQuestion = null;
+    let stepIndex = 0;
+
+    function startDemo() {
+      currentQuestion = DEMO_QUESTION;
+      stepIndex = 0;
+      renderQuestionCard(currentQuestion);
+      switchToChat();
+      setTimeout(advanceAI, 400);
+    }
+
+    async function startWithPhoto() {
+      if (ApiClient.isEnabled()) {
+        const raw = prompt('输入题目图片 URL、data:image 图片数据；内测阶段也可直接粘贴已识别的题目文字');
+        if (!raw || !raw.trim()) return;
+        await startApiPhotoQuestion(raw.trim());
+        return;
+      }
+      currentQuestion = DEMO_QUESTION;
+      stepIndex = 0;
+      switchToChat();
+      questionCardSlot.innerHTML = `
+        <div class="photo-mock">
+          <div class="photo-mock-frame">📸</div>
+          <div class="photo-mock-tip">正在识别题目中...</div>
+        </div>
+      `;
+      setTimeout(() => {
+        renderQuestionCard(currentQuestion);
+        setTimeout(advanceAI, 400);
+      }, 1400);
+    }
+
+    function startWithVoice() {
+      alert('原型阶段:语音功能在阶段 2 接入真实 AI 时实现');
+    }
+
+    function focusText() {
+      composeInput.focus();
+    }
+
+    async function submitText() {
+      const v = composeInput.value.trim();
+      if (!v) { composeInput.focus(); return; }
+      if (currentQuestion) {
+        appendBubble({ role: 'user', type: 'text', content: v });
+        composeInput.value = '';
+        setTimeout(() => {
+          appendBubble({ role: 'ai', type: 'analysis', title: '收到', content: '原型阶段我先按预设脚本继续。真实接入大模型后,这里会针对你的追问给出回应。' });
+        }, 600);
+        return;
+      }
+      if (ApiClient.isEnabled()) {
+        await startApiQuestion(v);
+        return;
+      }
+      currentQuestion = { ...DEMO_QUESTION, title: v };
+      stepIndex = 0;
+      renderQuestionCard(currentQuestion);
+      switchToChat();
+      composeInput.value = '';
+      setTimeout(advanceAI, 400);
+    }
+
+    async function startApiQuestion(text) {
+      currentQuestion = { subject: 'math', title: text, apiMode: true };
+      stepIndex = 0;
+      renderQuestionCard(currentQuestion);
+      switchToChat();
+      composeInput.value = '';
+      appendBubble({ role: 'user', type: 'text', content: text });
+      showTyping();
+      try {
+        if (!ApiClient.getServerUserId()) {
+          await ApiClient.login(UserStore.get());
+        }
+        const question = await ApiClient.createQuestion({ subjectCode: 'math', originalText: text });
+        currentQuestion.serverQuestionId = question.id;
+        const answer = await ApiClient.nextAnswer(question.id);
+        hideTyping();
+        appendBubble({
+          role: 'ai',
+          type: answer.type || 'hint',
+          title: answer.title || '提示',
+          content: answer.content || '',
+          options: answer.options || [],
+          finishAction: true,
+        });
+      } catch (error) {
+        hideTyping();
+        const isQuotaError = error.status === 429;
+        appendBubble({
+          role: 'ai',
+          type: 'text',
+          title: isQuotaError ? '今日额度已用完' : '后端连接失败',
+          content: isQuotaError
+            ? error.message
+            : `我先切回本地演示模式。失败原因:${error.message}`,
+        });
+      }
+    }
+
+    async function startApiPhotoQuestion(input) {
+      const isUrl = /^https?:\/\//i.test(input);
+      const isDataImage = /^data:image\/(png|jpeg|webp);base64,/i.test(input);
+      currentQuestion = { subject: 'math', title: '拍照识题中...', apiMode: true };
+      stepIndex = 0;
+      switchToChat();
+      questionCardSlot.innerHTML = `
+        <div class="photo-mock">
+          <div class="photo-mock-frame">📸</div>
+          <div class="photo-mock-tip">正在识别题目中...</div>
+        </div>
+      `;
+      showTyping();
+      try {
+        if (!ApiClient.getServerUserId()) {
+          await ApiClient.login(UserStore.get());
+        }
+        let imageUrl = isUrl ? input : undefined;
+        if (isDataImage) {
+          const contentType = input.match(/^data:(image\/(?:png|jpeg|webp));base64,/i)[1].toLowerCase();
+          const uploaded = await ApiClient.uploadImage({ imageData: input, contentType });
+          imageUrl = uploaded.imageUrl;
+        }
+        const ocr = await ApiClient.extractOcr({
+          imageUrl,
+          mockText: imageUrl ? undefined : input,
+        });
+        const title = ocr.text || input;
+        currentQuestion.title = title;
+        renderQuestionCard(currentQuestion);
+        appendBubble({ role: 'user', type: 'text', content: title });
+        const question = await ApiClient.createQuestion({
+          subjectCode: 'math',
+          inputType: 'image',
+          imageUrl,
+          ocrText: title,
+        });
+        currentQuestion.serverQuestionId = question.id;
+        const answer = await ApiClient.nextAnswer(question.id);
+        hideTyping();
+        appendBubble({
+          role: 'ai',
+          type: answer.type || 'hint',
+          title: answer.title || '提示',
+          content: answer.content || '',
+          options: answer.options || [],
+          finishAction: true,
+        });
+      } catch (error) {
+        hideTyping();
+        renderQuestionCard({ subject: 'math', title: input });
+        appendBubble({
+          role: 'ai',
+          type: 'text',
+          title: '拍照识题失败',
+          content: `失败原因:${error.message}`,
+        });
+      }
+    }
+
+    function switchToChat() {
+      emptyState.style.display = 'none';
+      askContent.style.display = 'flex';
+      newAskBtn.style.display = 'block';
+    }
+
+    newAskBtn.addEventListener('click', () => {
+      currentQuestion = null;
+      stepIndex = 0;
+      chatStream.innerHTML = '';
+      questionCardSlot.innerHTML = '';
+      askContent.style.display = 'none';
+      emptyState.style.display = 'block';
+      newAskBtn.style.display = 'none';
+    });
+
+    function renderQuestionCard(q) {
+      const s = SUBJECTS[q.subject] || SUBJECTS.math;
+      questionCardSlot.innerHTML = `
+        <div class="question-card">
+          <span class="question-card-label">${s.icon} ${s.name}</span>
+          <div class="question-card-text">${q.title}</div>
+        </div>
+      `;
+    }
+
+    function advanceAI() {
+      const step = currentQuestion.steps[stepIndex];
+      if (!step) return;
+      if (step.role === 'user') return;
+      showTyping();
+      const delay = step.type === 'hint' || step.type === 'solution' ? 700 : 450;
+      setTimeout(() => {
+        hideTyping();
+        appendBubble(step);
+        stepIndex++;
+        const next = currentQuestion.steps[stepIndex];
+        if (next && next.role === 'ai') {
+          setTimeout(advanceAI, 500);
+        }
+      }, delay);
+    }
+
+    function appendBubble(step) {
+      const row = document.createElement('div');
+      row.className = `bubble-row ${step.role}`;
+
+      if (step.role === 'ai') {
+        row.innerHTML = `
+          <div class="bubble-avatar">🎓</div>
+          <div class="bubble ai">
+            ${step.title ? `<div class="bubble-tag ${step.type}">${step.title}</div>` : ''}
+            <div>${(step.content || '').replace(/\n/g, '<br>')}</div>
+            ${renderExtras(step)}
+          </div>
+        `;
+      } else {
+        row.innerHTML = `<div class="bubble user">${step.content}</div>`;
+      }
+
+      chatStream.appendChild(row);
+      scrollChatToBottom();
+
+      if (step.options) {
+        $$('.option-btn', row).forEach(btn => {
+          btn.addEventListener('click', () => {
+            const choice = btn.textContent;
+            $$('.option-btn', row).forEach(b => b.disabled = true);
+            btn.style.background = 'var(--primary)';
+            btn.style.color = 'white';
+            stepIndex++; // 跳过预设 user 步骤
+            appendBubble({ role: 'user', type: 'choice', content: choice });
+            stepIndex++; // 已经显示
+            setTimeout(advanceAI, 500);
+          });
+        });
+      }
+
+      if (step.questions) {
+        $$('.related-item', row).forEach(item => {
+          item.addEventListener('click', () => {
+            alert('原型阶段:点击变式题在【复习】模块中会有完整体验');
+          });
+        });
+      }
+
+      const finishBtn = $('[data-finish-api]', row);
+      if (finishBtn) {
+        finishBtn.addEventListener('click', () => {
+          finishBtn.style.pointerEvents = 'none';
+          finishBtn.textContent = '正在生成复习任务...';
+          finishApiQuestion();
+        });
+      }
+    }
+
+    function renderExtras(step) {
+      if (step.options) {
+        return `
+          <div class="options-row">
+            ${step.options.map(o => `<button class="option-btn">${o}</button>`).join('')}
+          </div>
+        `;
+      }
+      if (step.questions) {
+        return `
+          <div class="related-list">
+            ${step.questions.map(q => `<div class="related-item">${q}</div>`).join('')}
+          </div>
+        `;
+      }
+      if (step.finishAction) {
+        return `
+          <div class="related-list">
+            <div class="related-item" data-finish-api>加入错题并生成复习任务</div>
+          </div>
+        `;
+      }
+      return '';
+    }
+
+    async function finishApiQuestion() {
+      if (!currentQuestion?.serverQuestionId) return;
+      showTyping();
+      try {
+        const result = await ApiClient.finishQuestion(currentQuestion.serverQuestionId, {
+          solvedIndependently: false,
+        });
+        hideTyping();
+        appendBubble({
+          role: 'ai',
+          type: 'finish',
+          title: '已加入复习',
+          content: result.createdErrorRecord
+            ? `已记录错因「${result.errorRecord.knowledgePoint}」, 并生成 ${result.reviewTasks.length} 个复习任务。`
+            : '这道题之前已经处理过, 复习任务不会重复生成。',
+        });
+      } catch (error) {
+        hideTyping();
+        appendBubble({
+          role: 'ai',
+          type: 'text',
+          title: '生成复习失败',
+          content: error.message,
+        });
+      }
+    }
+
+    function showTyping() {
+      const row = document.createElement('div');
+      row.className = 'bubble-row ai';
+      row.id = '__typing';
+      row.innerHTML = `
+        <div class="bubble-avatar">🎓</div>
+        <div class="bubble ai">
+          <div class="typing"><span></span><span></span><span></span></div>
+        </div>
+      `;
+      chatStream.appendChild(row);
+      scrollChatToBottom();
+    }
+
+    function hideTyping() {
+      const t = document.getElementById('__typing');
+      if (t) t.remove();
+    }
+
+    function scrollChatToBottom() {
+      requestAnimationFrame(() => {
+        chatStream.scrollTop = chatStream.scrollHeight;
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+    }
+
+    composeInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitText();
+      }
+    });
+  </script>
+</body>
+</html>

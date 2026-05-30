@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AI 家教">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>离线 - AI 家庭教师</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main class="offline-page">
+    <div class="offline-card">
+      <div class="offline-icon">⌁</div>
+      <h1>当前离线</h1>
+      <p>已缓存的页面仍可查看。本地演示数据可继续使用，提交题目、同步账号和支付操作需要恢复网络。</p>
+      <button class="btn-primary" onclick="location.reload()">重新连接</button>
+    </div>
+  </main>
+  <script src="js/pwa.js"></script>
+</body>
+</html>

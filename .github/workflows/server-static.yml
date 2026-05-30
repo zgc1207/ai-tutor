@@ -1,0 +1,73 @@
+name: Server Static Verification
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  verify-static:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://ai_tutor:ai_tutor@localhost:5432/ai_tutor?schema=public
+      BODY_LIMIT_BYTES: 8388608
+      SECURITY_HEADERS_ENABLED: true
+      RATE_LIMIT_ENABLED: true
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX: 300
+      ADMIN_TOKEN: ci-static-admin-token
+      INTERNAL_TEST_INVITE_CODE: ci-static-invite
+      AUTH_OTP_SECRET: ci-static-otp-secret
+      AUTH_OTP_DEV_MODE: true
+      AUTH_OTP_DELIVERY_PROVIDER: dev
+      AUTH_OTP_DELIVERY_ENDPOINT: ""
+      AUTH_OTP_DELIVERY_TOKEN: ""
+      AUTH_OTP_TTL_MINUTES: 10
+      AUTH_OTP_MAX_ATTEMPTS: 5
+      AUTH_OTP_RETENTION_DAYS: 7
+      AUTH_OTP_MIN_INTERVAL_SECONDS: 60
+      PLUS_PRICE_CENTS_MONTHLY: 2900
+      PAYMENT_PROVIDER: dev
+      PAYMENT_PROVIDER_ENDPOINT: ""
+      PAYMENT_PROVIDER_TOKEN: ""
+      PAYMENT_WEBHOOK_SECRET: ci-static-payment-secret
+      PAYMENT_READY: false
+      PUSH_PROVIDER: dev
+      PUSH_ENDPOINT: ""
+      PUSH_TOKEN: ""
+      PUSH_READY: false
+      OPS_MAX_AI_FAILURE_RATE: 0.08
+      OPS_MAX_DAILY_AI_COST: 100
+      OPS_MIN_REVIEW_COMPLETION_RATE: 0.5
+      OPS_MIN_AVERAGE_FEEDBACK_RATING: 3.5
+      ALLOW_LEGACY_USER_ID_AUTH: false
+      ALLOW_MOCK_LOGIN: true
+      LLM_PROVIDER: mock
+      OCR_PROVIDER: mock
+      ALLOW_PUBLIC_UPLOAD_ACCESS: true
+      UPLOAD_STORAGE_PROVIDER: local
+      UPLOAD_STORAGE_ENDPOINT: ""
+      UPLOAD_STORAGE_TOKEN: ""
+      NOTIFICATION_RETENTION_DAYS: 180
+      DISABLED_DEVICE_TOKEN_RETENTION_DAYS: 180
+      CORS_ALLOWED_ORIGINS: ""
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run static verification
+        run: npm run verify:static

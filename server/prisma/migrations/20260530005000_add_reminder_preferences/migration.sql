@@ -1,0 +1,5 @@
+ALTER TABLE "StudentProfile"
+ADD COLUMN "reviewReminderEnabled" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN "reviewReminderTime" TEXT NOT NULL DEFAULT '19:00',
+ADD COLUMN "quietHoursStart" TEXT NOT NULL DEFAULT '21:00',
+ADD COLUMN "quietHoursEnd" TEXT NOT NULL DEFAULT '07:00';

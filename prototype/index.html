@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AI 家教">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>AI 家庭教师</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- 顶部 -->
+  <header class="top-bar">
+    <div class="top-bar-row">
+      <div class="student-switcher" id="userHeader"></div>
+      <button class="icon-btn" aria-label="消息">🔔</button>
+    </div>
+    <div class="greeting" id="greeting"></div>
+    <div class="greeting-sub" id="greetingSub"></div>
+  </header>
+
+  <!-- 主内容 -->
+  <main class="content">
+    <!-- 今日复习 Banner -->
+    <div class="section">
+      <div class="review-banner" onclick="location.href='review.html'">
+        <div class="review-banner-left">
+          <div class="review-banner-icon">📅</div>
+          <div>
+            <div class="review-banner-title">今日待复习 <span id="todayCount">6</span> 题</div>
+            <div class="review-banner-sub">基于艾宾浩斯遗忘曲线推送</div>
+          </div>
+        </div>
+        <div class="review-banner-arrow">›</div>
+      </div>
+    </div>
+
+    <!-- 学习概览 -->
+    <div class="section">
+      <div class="section-title">学习概览</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-num danger" id="weakNum">0</div>
+          <div class="stat-label">薄弱知识点</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num warning" id="learningNum">0</div>
+          <div class="stat-label">学习中</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num success" id="masteredNum">0</div>
+          <div class="stat-label">已掌握</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 科目 -->
+    <div class="section">
+      <div class="section-title">我的科目</div>
+      <div class="subject-grid" id="subjectGrid"></div>
+    </div>
+
+    <!-- 最近答疑 -->
+    <div class="section">
+      <div class="section-title">
+        最近答疑
+        <span class="more">查看全部 ›</span>
+      </div>
+      <div class="recent-list" id="recentList"></div>
+    </div>
+  </main>
+
+  <!-- Tab Bar 占位，由 JS 渲染 -->
+  <div id="tabBarSlot"></div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireLogin()) { /* 跳转中 */ }
+    else {
+      const user = UserStore.get();
+      let dashboardData = null;
+      let dashboardError = '';
+
+      // 顶部
+      renderUserHeader(document.getElementById('userHeader'));
+      document.getElementById('greeting').textContent = `${greetingByHour()}，${user.nickname}`;
+      document.getElementById('greetingSub').textContent = '今天也要陪你一起搞懂每道题';
+
+      async function loadDashboard() {
+        if (!ApiClient.isEnabled()) return;
+        try {
+          if (!ApiClient.getServerUserId()) {
+            await ApiClient.login(UserStore.get());
+          }
+          dashboardData = await ApiClient.getDashboard();
+        } catch (error) {
+          dashboardError = error.message;
+        }
+      }
+
+      function renderOverview() {
+        // 概览汇总
+        let weak = 0, learning = 0, mastered = 0, todayReview = 0;
+        if (dashboardData) {
+          weak = dashboardData.progress.weak;
+          learning = dashboardData.progress.learning;
+          mastered = dashboardData.progress.mastered;
+          todayReview = dashboardData.todayReviewCount;
+        } else {
+          const progress = getCurrentProgress();
+          DEFAULT_SUBJECTS.forEach(k => {
+            const p = progress[k];
+            weak      += p.weak;
+            learning  += p.learning;
+            mastered  += p.mastered;
+            todayReview += p.todayReview;
+          });
+        }
+        document.getElementById('weakNum').textContent = weak;
+        document.getElementById('learningNum').textContent = learning;
+        document.getElementById('masteredNum').textContent = mastered;
+        document.getElementById('todayCount').textContent = todayReview;
+      }
+
+      function renderSubjects() {
+      const progress = getCurrentProgress();
+        // 科目卡片
+        const grid = document.getElementById('subjectGrid');
+        grid.innerHTML = DEFAULT_SUBJECTS.map(k => {
+          const s = SUBJECTS[k];
+          const p = progress[k];
+          const dots = [];
+          if (p.weak)     dots.push(`<span class="dot red"></span>${p.weak} 薄弱`);
+          if (p.learning) dots.push(`<span class="dot yellow"></span>${p.learning} 学习中`);
+          if (p.mastered) dots.push(`<span class="dot green"></span>${p.mastered} 已掌握`);
+          return `
+            <div class="subject-card" onclick="location.href='mistakes.html?subject=${k}'">
+              <div class="subject-icon ${s.cls}">${s.icon}</div>
+              <div class="subject-name">${s.name}</div>
+              <div class="subject-meta">${dots.slice(0,2).join('  ')}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function renderRecent() {
+        // 最近答疑
+        const list = document.getElementById('recentList');
+        const recent = dashboardData ? dashboardData.recent : getCurrentRecent();
+        list.innerHTML = recent.map(r => {
+          const s = SUBJECTS[r.subject] || SUBJECTS.math;
+          return `
+            <div class="recent-item" onclick="location.href='ask.html?q=${r.id}'">
+              <div class="recent-icon">${s.icon}</div>
+              <div class="recent-info">
+                <div class="recent-title">${r.title}</div>
+                <div class="recent-meta">${s.name} · ${r.time}</div>
+              </div>
+              <span class="recent-status ${r.status}">${r.status === 'mistake' ? '加入错题' : '已搞懂'}</span>
+            </div>
+          `;
+        }).join('') + (dashboardError ? `
+          <div style="padding:10px 16px; font-size:12px; color:var(--danger); border-top:1px solid var(--gray-100);">
+            后端首页数据加载失败, 当前展示本地演示数据:${dashboardError}
+          </div>
+        ` : '');
+      }
+
+      (async function initHome() {
+        await loadDashboard();
+        renderOverview();
+        renderSubjects();
+        renderRecent();
+      })();
+
+      // Tab Bar
+      document.getElementById('tabBarSlot').outerHTML = renderTabBar('home');
+    }
+  </script>
+</body>
+</html>

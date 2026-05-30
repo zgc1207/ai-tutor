@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AI 家教">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>协议说明 - AI 家庭教师</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="page-header">
+    <button class="back-btn" onclick="history.back()">‹</button>
+    <div class="page-header-title" id="pageTitle">协议说明</div>
+  </div>
+
+  <main class="content">
+    <div class="section">
+      <div class="recent-list" id="legalContent"></div>
+    </div>
+  </main>
+
+  <script src="js/pwa.js"></script>
+  <script>
+    const docs = {
+      terms: {
+        title: '用户协议',
+        items: [
+          'AI 家庭教师是 K12 学习辅助工具, 通过启发式提示帮助学生理解题目, 不替代学校教学、教师判断或官方答案。',
+          '一个登录用户只对应一个学生。错题、复习任务、知识图谱和学习报告按账号隔离。',
+          '用户不得使用本产品代写作业、考试作弊、上传违法或不适合未成年人的内容。',
+          'AI 可能存在错误或不完整, 重要学习结论应结合教材、老师和家长判断。',
+          '内测草案上线前需由法务根据实际运营主体和应用市场要求审核。'
+        ],
+      },
+      privacy: {
+        title: '隐私政策',
+        items: [
+          '我们只收集提供学习辅导、错题复习、账号安全、服务改进所必需的信息。',
+          '可能处理的信息包括手机号、昵称、年级、题目文本或图片识别结果、AI 对话、错题、复习记录、反馈和必要日志。',
+          '相机、相册、麦克风、通知等权限只应在具体功能触发时申请, 拒绝非必要权限不影响基础文本提问。',
+          '用户或监护人可请求查询、更正、删除、导出个人信息, 也可以注销账号。',
+          '正式上线前需补齐第三方 SDK 清单、数据保存期限、隐私负责人和个人信息权利请求入口。'
+        ],
+      },
+      minors: {
+        title: '未成年人使用说明',
+        items: [
+          '未成年人应在父母或其他监护人的同意和指导下使用本产品。',
+          '请不要向 AI 提交身份证号、家庭住址、学校班级、联系方式、银行卡等敏感信息。',
+          '产品默认不直接给最终答案, 目标是帮助学生自己完成思考。',
+          '不满十四周岁用户正式使用前, 应取得监护人同意并适用专门个人信息处理规则。',
+          '遇到不适合未成年人、危险、自伤或伤害他人的内容, 应立即告诉家长或老师。'
+        ],
+      },
+    };
+
+    const type = new URLSearchParams(location.search).get('type') || 'terms';
+    const doc = docs[type] || docs.terms;
+    document.getElementById('pageTitle').textContent = doc.title;
+    document.getElementById('legalContent').innerHTML = doc.items.map((item, index) => `
+      <div class="recent-item" style="align-items:flex-start;">
+        <div class="recent-icon">${index + 1}</div>
+        <div class="recent-info">
+          <div class="recent-title" style="font-weight:500;">${item}</div>
+        </div>
+      </div>
+    `).join('');
+  </script>
+</body>
+</html>

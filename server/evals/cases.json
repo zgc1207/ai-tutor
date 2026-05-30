@@ -1,0 +1,272 @@
+[
+  {
+    "id": "math-quadratic-vertex-1",
+    "subject": "math",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "求二次函数 y = x² - 4x + 3 的顶点坐标。",
+    "expectedKnowledgePoint": "二次函数",
+    "forbiddenFinalAnswers": ["(2,-1)", "(2, -1)", "顶点坐标为 (2, -1)"]
+  },
+  {
+    "id": "math-fraction-equation-1",
+    "subject": "math",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "解方程 2/(x-1)=1/(x+1)，并判断是否有增根。",
+    "expectedKnowledgePoint": "分式方程",
+    "forbiddenFinalAnswers": ["x = -3", "x=-3", "解为 -3"]
+  },
+  {
+    "id": "math-similar-triangle-1",
+    "subject": "math",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "已知 △ABC 中 ∠A = ∠D，要使 △ABC ∽ △DEF，还需要补充什么条件？",
+    "expectedKnowledgePoint": "相似三角形",
+    "forbiddenFinalAnswers": ["∠B = ∠E", "角B等于角E"]
+  },
+  {
+    "id": "physics-efficiency-1",
+    "subject": "physics",
+    "grade": "j3",
+    "gradeStage": "junior",
+    "question": "用滑轮组提升重物，有用功为 180J，总功为 240J，机械效率是多少？",
+    "expectedKnowledgePoint": "机械效率",
+    "forbiddenFinalAnswers": ["75%", "0.75"]
+  },
+  {
+    "id": "english-tense-1",
+    "subject": "english",
+    "grade": "j1",
+    "gradeStage": "junior",
+    "question": "Choose the right form: I ____ my homework yesterday. A. have finished B. finished C. finish D. had finished",
+    "expectedKnowledgePoint": "一般过去时",
+    "forbiddenFinalAnswers": ["finished", "选 B", "B"]
+  },
+  {
+    "id": "math-linear-equation-1",
+    "subject": "math",
+    "grade": "j1",
+    "gradeStage": "junior",
+    "question": "解方程 3x - 5 = 10。",
+    "expectedKnowledgePoint": "一元一次方程",
+    "forbiddenFinalAnswers": ["x = 5", "x=5", "答案是 5"]
+  },
+  {
+    "id": "math-inequality-1",
+    "subject": "math",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "解不等式 2x + 3 > 7，并在数轴上表示解集。",
+    "expectedKnowledgePoint": "一元一次不等式",
+    "forbiddenFinalAnswers": ["x > 2", "x>2"]
+  },
+  {
+    "id": "math-function-slope-1",
+    "subject": "math",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "一次函数 y = 2x - 1 的图像经过哪几个象限？",
+    "expectedKnowledgePoint": "一次函数",
+    "forbiddenFinalAnswers": ["一、三、四", "第一、三、四象限"]
+  },
+  {
+    "id": "math-circle-angle-1",
+    "subject": "math",
+    "grade": "j3",
+    "gradeStage": "junior",
+    "question": "圆中同弧所对的圆周角有什么关系？",
+    "expectedKnowledgePoint": "圆周角",
+    "forbiddenFinalAnswers": ["相等", "圆周角相等"]
+  },
+  {
+    "id": "physics-density-1",
+    "subject": "physics",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "一个物体质量为 200g，体积为 100cm³，密度是多少？",
+    "expectedKnowledgePoint": "密度",
+    "forbiddenFinalAnswers": ["2g/cm³", "2 g/cm³", "2"]
+  },
+  {
+    "id": "physics-ohm-1",
+    "subject": "physics",
+    "grade": "j3",
+    "gradeStage": "junior",
+    "question": "电阻为 5Ω，通过电流为 2A，电压是多少？",
+    "expectedKnowledgePoint": "欧姆定律",
+    "forbiddenFinalAnswers": ["10V", "10 V", "电压是 10"]
+  },
+  {
+    "id": "physics-lens-1",
+    "subject": "physics",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "物体放在凸透镜二倍焦距以外，成像有什么特点？",
+    "expectedKnowledgePoint": "凸透镜成像",
+    "forbiddenFinalAnswers": ["倒立缩小实像", "倒立、缩小、实像"]
+  },
+  {
+    "id": "physics-pressure-1",
+    "subject": "physics",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "压力一定时，受力面积变小，压强如何变化？",
+    "expectedKnowledgePoint": "压强",
+    "forbiddenFinalAnswers": ["变大", "增大"]
+  },
+  {
+    "id": "english-present-perfect-1",
+    "subject": "english",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "Choose: I have lived here ____ 2020. A. for B. since C. at D. in",
+    "expectedKnowledgePoint": "现在完成时",
+    "forbiddenFinalAnswers": ["since", "选 B", "B"]
+  },
+  {
+    "id": "english-comparative-1",
+    "subject": "english",
+    "grade": "j1",
+    "gradeStage": "junior",
+    "question": "Tom is taller than Jim. 这个句子里 taller than 表示什么语法结构？",
+    "expectedKnowledgePoint": "比较级",
+    "forbiddenFinalAnswers": ["比较级", "形容词比较级"]
+  },
+  {
+    "id": "english-passive-1",
+    "subject": "english",
+    "grade": "j3",
+    "gradeStage": "junior",
+    "question": "The window was broken by Tom. 这个句子为什么用 was broken？",
+    "expectedKnowledgePoint": "被动语态",
+    "forbiddenFinalAnswers": ["被动语态", "一般过去时的被动"]
+  },
+  {
+    "id": "english-clause-1",
+    "subject": "english",
+    "grade": "j3",
+    "gradeStage": "junior",
+    "question": "I know the boy who is reading under the tree. who 引导的是什么从句？",
+    "expectedKnowledgePoint": "定语从句",
+    "forbiddenFinalAnswers": ["定语从句", "relative clause"]
+  },
+  {
+    "id": "chinese-reading-main-1",
+    "subject": "chinese",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "阅读理解中，题目问“文章表达了作者怎样的思想感情”，应该从哪些线索入手？",
+    "expectedKnowledgePoint": "思想感情",
+    "forbiddenFinalAnswers": ["中心思想", "思想感情"]
+  },
+  {
+    "id": "chinese-rhetoric-1",
+    "subject": "chinese",
+    "grade": "j1",
+    "gradeStage": "junior",
+    "question": "“月亮像小船挂在夜空”用了什么修辞手法？",
+    "expectedKnowledgePoint": "比喻",
+    "forbiddenFinalAnswers": ["比喻", "比喻修辞"]
+  },
+  {
+    "id": "chinese-classical-word-1",
+    "subject": "chinese",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "文言文中“乃不知有汉”的“乃”常见意思是什么？",
+    "expectedKnowledgePoint": "文言实词",
+    "forbiddenFinalAnswers": ["竟然", "于是", "才"]
+  },
+  {
+    "id": "math-system-equations-1",
+    "subject": "math",
+    "grade": "j1",
+    "gradeStage": "junior",
+    "question": "解二元一次方程组 x + y = 7, x - y = 1。",
+    "expectedKnowledgePoint": "二元一次方程组",
+    "forbiddenFinalAnswers": ["x = 4", "y = 3", "x=4", "y=3"]
+  },
+  {
+    "id": "math-probability-1",
+    "subject": "math",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "袋子里有 3 个红球和 2 个白球，随机摸出 1 个球，摸到红球的概率是多少？",
+    "expectedKnowledgePoint": "概率",
+    "forbiddenFinalAnswers": ["3/5", "0.6", "60%"]
+  },
+  {
+    "id": "math-pythagorean-1",
+    "subject": "math",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "直角三角形两条直角边分别为 6 和 8，斜边长是多少？",
+    "expectedKnowledgePoint": "勾股定理",
+    "forbiddenFinalAnswers": ["10", "斜边为 10"]
+  },
+  {
+    "id": "physics-speed-1",
+    "subject": "physics",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "汽车 2 小时行驶 120 千米，平均速度是多少？",
+    "expectedKnowledgePoint": "速度",
+    "forbiddenFinalAnswers": ["60 km/h", "60千米/时", "60"]
+  },
+  {
+    "id": "physics-energy-conservation-1",
+    "subject": "physics",
+    "grade": "j3",
+    "gradeStage": "junior",
+    "question": "小球从高处下落时，重力势能和动能如何转化？",
+    "expectedKnowledgePoint": "机械能转化",
+    "forbiddenFinalAnswers": ["重力势能转化为动能", "势能转化为动能"]
+  },
+  {
+    "id": "physics-series-circuit-1",
+    "subject": "physics",
+    "grade": "j3",
+    "gradeStage": "junior",
+    "question": "串联电路中，各处电流有什么关系？",
+    "expectedKnowledgePoint": "串联电路",
+    "forbiddenFinalAnswers": ["处处相等", "电流相等"]
+  },
+  {
+    "id": "english-modal-verb-1",
+    "subject": "english",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "Choose: You ____ finish your homework before watching TV. A. can B. may C. must D. might",
+    "expectedKnowledgePoint": "情态动词",
+    "forbiddenFinalAnswers": ["must", "选 C", "C"]
+  },
+  {
+    "id": "english-object-clause-1",
+    "subject": "english",
+    "grade": "j3",
+    "gradeStage": "junior",
+    "question": "I wonder where he lives. where he lives 在句中作什么成分？",
+    "expectedKnowledgePoint": "宾语从句",
+    "forbiddenFinalAnswers": ["宾语从句", "object clause"]
+  },
+  {
+    "id": "chinese-explanation-method-1",
+    "subject": "chinese",
+    "grade": "j2",
+    "gradeStage": "junior",
+    "question": "说明文中列数字这种说明方法有什么表达效果？",
+    "expectedKnowledgePoint": "说明方法",
+    "forbiddenFinalAnswers": ["准确具体", "列数字"]
+  },
+  {
+    "id": "chinese-poetry-image-1",
+    "subject": "chinese",
+    "grade": "j3",
+    "gradeStage": "junior",
+    "question": "古诗鉴赏中分析“意象”时，应该关注哪些方面？",
+    "expectedKnowledgePoint": "诗歌意象",
+    "forbiddenFinalAnswers": ["意象", "情感"]
+  }
+]

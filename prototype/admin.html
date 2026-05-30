@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AI 家教运营">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>运营控制台 - AI 家庭教师</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="admin-page">
+  <header class="admin-header">
+    <div>
+      <div class="admin-title">运营控制台</div>
+      <div class="admin-subtitle">内测健康、内容审核、用户和商业化状态</div>
+    </div>
+    <button class="admin-secondary-btn" id="refreshBtn">刷新</button>
+  </header>
+
+  <main class="admin-content">
+    <section class="admin-panel">
+      <div class="admin-panel-title">连接配置</div>
+      <label class="admin-label">后端 API</label>
+      <input class="form-input" id="apiBase" placeholder="http://localhost:3000">
+      <label class="admin-label">Admin Token</label>
+      <input class="form-input" id="adminToken" type="password" placeholder="输入 ADMIN_TOKEN">
+      <div class="admin-actions">
+        <button class="btn-primary" id="saveConfigBtn">保存并加载</button>
+        <button class="admin-secondary-btn" id="clearConfigBtn">清除</button>
+      </div>
+      <div class="admin-status-line" id="configStatus">未加载</div>
+    </section>
+
+    <section class="admin-panel">
+      <div class="admin-panel-head">
+        <div class="admin-panel-title">扩量健康</div>
+        <span class="admin-pill" id="opsStatus">--</span>
+      </div>
+      <div class="admin-grid" id="opsSummary"></div>
+      <div class="admin-list" id="opsChecks"></div>
+    </section>
+
+    <section class="admin-panel">
+      <div class="admin-panel-title">关键指标</div>
+      <div class="admin-grid" id="metricsGrid"></div>
+    </section>
+
+    <section class="admin-panel">
+      <div class="admin-panel-title">商业化与对账</div>
+      <div class="admin-grid" id="billingGrid"></div>
+      <div class="admin-list" id="reconciliationList"></div>
+    </section>
+
+    <section class="admin-panel">
+      <div class="admin-panel-title">内容与 AI 审核</div>
+      <div class="admin-list" id="contentReviewList"></div>
+    </section>
+
+    <section class="admin-panel">
+      <div class="admin-panel-title">最近用户</div>
+      <div class="admin-table" id="userTable"></div>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/admin-console.js"></script>
+</body>
+</html>

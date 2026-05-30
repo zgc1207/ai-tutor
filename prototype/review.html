@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AI 家教">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>复习 - AI 家庭教师</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="page-header">
+    <div class="page-header-back" id="backBtn" onclick="goBack()">‹</div>
+    <div class="page-header-title" id="headerTitle">今日复习</div>
+  </div>
+
+  <!-- 任务列表视图 -->
+  <div id="taskListView">
+    <div class="review-summary">
+      <div>
+        <div class="review-summary-num"><span id="todayTotal">0</span> 题</div>
+        <div class="review-summary-text">基于艾宾浩斯遗忘曲线 · 全部做完约需 8 分钟</div>
+      </div>
+      <div class="review-summary-icon">🧠</div>
+    </div>
+    <div class="content" style="padding-top:0;" id="cycleList"></div>
+  </div>
+
+  <!-- 做题视图 -->
+  <div id="quizView" style="display:none;">
+    <div class="quiz-screen">
+      <div class="quiz-progress" id="quizProgress"></div>
+      <div class="quiz-card">
+        <div class="quiz-meta">
+          <span class="quiz-cycle-tag" id="quizCycle"></span>
+          <span class="quiz-kp" id="quizKp"></span>
+        </div>
+        <div class="quiz-title" id="quizTitle"></div>
+        <div class="quiz-tip">变式题:同知识点不同情境,连续答对 2 次该知识点转为"已掌握"</div>
+      </div>
+
+      <div class="choice-list" id="choiceList"></div>
+
+      <div class="explain-card" id="explainCard">
+        <div class="explain-card-title">💡 解析</div>
+        <div id="explainText"></div>
+      </div>
+
+      <div class="quiz-actions" id="quizActions" style="display:none;">
+        <button class="btn-secondary" onclick="goAskFromQuiz()">问 AI</button>
+        <button class="btn-next" id="nextBtn" onclick="nextQuiz()">下一题</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 完成视图 -->
+  <div id="finishView" style="display:none;">
+    <div class="finish-screen">
+      <div class="finish-emoji">🎉</div>
+      <div class="finish-title">今日复习完成!</div>
+      <div class="finish-sub" id="finishSub">你巩固了一批薄弱知识点</div>
+      <div class="finish-stats">
+        <div class="finish-stat">
+          <div class="finish-stat-num" style="color:var(--success);" id="rightNum">0</div>
+          <div class="finish-stat-label">答对</div>
+        </div>
+        <div class="finish-stat">
+          <div class="finish-stat-num" style="color:var(--danger);" id="wrongNum">0</div>
+          <div class="finish-stat-label">答错</div>
+        </div>
+        <div class="finish-stat">
+          <div class="finish-stat-num" style="color:var(--primary);" id="upgradeNum">0</div>
+          <div class="finish-stat-label">知识点升级</div>
+        </div>
+      </div>
+      <button class="btn-primary" style="max-width:280px; margin:0 auto;" onclick="location.href='index.html'">返回首页</button>
+      <div style="margin-top:14px;">
+        <a href="mistakes.html" style="color:var(--gray-500); font-size:13px; text-decoration:none;">查看错题本 →</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="tabBarSlot"></div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireLogin()) { /* redirecting */ }
+
+    let quizQueue = [];
+    let quizIdx = 0;
+    let answeredCorrect = 0;
+    let answeredWrong = 0;
+    let backendUpgradeCount = 0;
+    let backendResetCount = 0;
+    let reviewTasks = getCurrentReviewTasks();
+    let usingServerTasks = false;
+    let reviewLoadError = '';
+
+    // 渲染任务列表
+    async function loadReviewTasks() {
+      if (!ApiClient.isEnabled()) return;
+      try {
+        if (!ApiClient.getServerUserId()) {
+          await ApiClient.login(UserStore.get());
+        }
+        const tasks = await ApiClient.getReviewTasks({ includeUpcoming: true });
+        if (tasks.length > 0) {
+          reviewTasks = tasks;
+          usingServerTasks = true;
+        }
+      } catch (error) {
+        usingServerTasks = false;
+        reviewLoadError = error.message;
+      }
+    }
+
+    function renderTaskList() {
+      document.getElementById('todayTotal').textContent = reviewTasks.length;
+      const grouped = {};
+      reviewTasks.forEach(t => {
+        (grouped[t.cycle] = grouped[t.cycle] || []).push(t);
+      });
+      const order = ['D1', 'D3', 'D7', 'D15'];
+      const labels = { D1: '第 1 天', D3: '第 3 天', D7: '第 7 天', D15: '第 15 天' };
+      const list = document.getElementById('cycleList');
+      list.innerHTML = order.filter(k => grouped[k]).map(k => `
+        <div class="cycle-section">
+          <div class="cycle-header">
+            <span class="cycle-badge ${k}">${k}</span>
+            <span class="cycle-label">${labels[k]}复习</span>
+            <span class="cycle-count">${grouped[k].length} 题</span>
+          </div>
+          ${grouped[k].map(t => {
+            const s = SUBJECTS[t.subject] || SUBJECTS.math;
+            return `
+              <div class="review-card" onclick="startSingleQuiz('${t.id}')">
+                <span class="review-card-kp">${s.icon} ${t.knowledgePoint}</span>
+                <div class="review-card-title">${t.variantTitle}</div>
+                <div class="review-card-foot">
+                  <span>由错题:${t.sourceTitle || getMistakeTitle(t.mistakeId)}</span>
+                  <span class="review-card-start">开始 ›</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `).join('') + `
+        <button class="btn-primary" style="margin-top:8px;" onclick="startAllQuiz()">
+          开始全部复习 (${reviewTasks.length} 题)
+        </button>
+        ${usingServerTasks ? '<div style="font-size:12px; color:var(--gray-500); margin-top:10px; text-align:center;">已连接后端复习任务</div>' : ''}
+        ${reviewLoadError ? `<div style="font-size:12px; color:var(--danger); margin-top:10px; text-align:center;">后端加载失败, 当前展示本地演示数据:${reviewLoadError}</div>` : ''}
+      `;
+    }
+
+    function getMistakeTitle(id) {
+      const m = getCurrentMistakes().find(x => x.id === id) || MOCK_MISTAKES.find(x => x.id === id);
+      return m ? m.title.slice(0, 12) + (m.title.length > 12 ? '…' : '') : '';
+    }
+
+    function startAllQuiz() {
+      quizQueue = [...reviewTasks];
+      quizIdx = 0;
+      answeredCorrect = 0;
+      answeredWrong = 0;
+      backendUpgradeCount = 0;
+      backendResetCount = 0;
+      switchToQuiz();
+    }
+
+    function startSingleQuiz(id) {
+      const t = reviewTasks.find(x => x.id === id);
+      if (!t) return;
+      quizQueue = [t];
+      quizIdx = 0;
+      answeredCorrect = 0;
+      answeredWrong = 0;
+      backendUpgradeCount = 0;
+      backendResetCount = 0;
+      switchToQuiz();
+    }
+
+    function switchToQuiz() {
+      document.getElementById('taskListView').style.display = 'none';
+      document.getElementById('finishView').style.display = 'none';
+      document.getElementById('quizView').style.display = 'block';
+      document.getElementById('headerTitle').textContent = '复习中';
+      renderQuiz();
+    }
+
+    function renderQuiz() {
+      const q = quizQueue[quizIdx];
+      if (!q) { finish(); return; }
+      const s = SUBJECTS[q.subject] || SUBJECTS.math;
+      document.getElementById('quizCycle').textContent = `${q.cycleLabel}复习`;
+      document.getElementById('quizKp').textContent = `${s.icon} ${q.knowledgePoint}`;
+      document.getElementById('quizTitle').textContent = q.variantTitle;
+      // 选项
+      const list = document.getElementById('choiceList');
+      const letters = ['A', 'B', 'C', 'D'];
+      list.innerHTML = q.variantOptions.map((opt, i) => `
+        <button class="choice" data-opt="${opt}">
+          <span class="choice-letter">${letters[i]}</span>
+          <span>${opt}</span>
+        </button>
+      `).join('');
+      $$('.choice', list).forEach(c => c.addEventListener('click', () => onAnswer(c, q)));
+      // 进度
+      const prog = document.getElementById('quizProgress');
+      prog.innerHTML = quizQueue.map((_, i) => {
+        let cls = '';
+        if (i < quizIdx) cls = 'done';
+        if (i === quizIdx) cls = 'current';
+        return `<div class="quiz-progress-dot ${cls}"></div>`;
+      }).join('');
+      document.getElementById('explainCard').classList.remove('show');
+      document.getElementById('explainCard').innerHTML = `
+        <div class="explain-card-title">💡 解析</div>
+        <div id="explainText"></div>
+      `;
+      document.getElementById('quizActions').style.display = 'none';
+    }
+
+    async function onAnswer(btn, q) {
+      const chosen = btn.dataset.opt;
+      const correct = chosen === q.correctAnswer;
+      $$('.choice').forEach(c => {
+        c.classList.add('disabled');
+        c.style.cursor = 'default';
+        if (c.dataset.opt === q.correctAnswer) c.classList.add('correct');
+        else if (c === btn) c.classList.add('wrong');
+        c.onclick = null;
+      });
+      // 进度点标记
+      const dots = $$('.quiz-progress-dot');
+      dots[quizIdx].classList.remove('current');
+      dots[quizIdx].classList.add(correct ? 'done' : 'wrong');
+      if (correct) answeredCorrect++; else answeredWrong++;
+
+      // 解析
+      const exp = document.getElementById('explainCard');
+      exp.querySelector('#explainText').textContent = q.explain;
+      exp.classList.add('show');
+      document.getElementById('quizActions').style.display = 'flex';
+      const nextBtn = document.getElementById('nextBtn');
+      nextBtn.textContent = (quizIdx + 1 < quizQueue.length) ? '下一题' : '完成';
+
+      if (q.serverTask) {
+        try {
+          const result = await ApiClient.answerReviewTask(q.id, chosen);
+          if (result.mastery) {
+            const explainText = exp.querySelector('#explainText');
+            if (result.mastery.mastered) {
+              backendUpgradeCount++;
+              explainText.textContent += '\n\n连续答对 2 次, 已标记为已掌握。';
+            } else if (result.mastery.reset) {
+              backendResetCount++;
+              explainText.textContent += '\n\n本次答错, 已重置复习周期并生成新的巩固任务。';
+            } else if (result.answeredCorrectly) {
+              explainText.textContent += '\n\n答对, 掌握进度 +1。';
+            }
+          }
+        } catch (error) {
+          exp.querySelector('#explainText').textContent += `\n\n提交后端失败:${error.message}`;
+        }
+      }
+    }
+
+    function nextQuiz() {
+      quizIdx++;
+      if (quizIdx >= quizQueue.length) { finish(); return; }
+      renderQuiz();
+      window.scrollTo(0, 0);
+    }
+
+    function goAskFromQuiz() {
+      location.href = 'ask.html';
+    }
+
+    function finish() {
+      document.getElementById('quizView').style.display = 'none';
+      document.getElementById('finishView').style.display = 'block';
+      document.getElementById('headerTitle').textContent = '复习完成';
+      document.getElementById('rightNum').textContent = answeredCorrect;
+      document.getElementById('wrongNum').textContent = answeredWrong;
+      const up = usingServerTasks ? backendUpgradeCount : Math.floor(answeredCorrect / 2);
+      document.getElementById('upgradeNum').textContent = up;
+      if (usingServerTasks && backendResetCount > 0) {
+        document.getElementById('finishSub').textContent = `${backendResetCount} 个知识点已重置复习周期`;
+      } else {
+        document.getElementById('finishSub').textContent = up > 0
+          ? `${up} 个薄弱知识点已转为"已掌握"`
+          : '再接再厉,继续巩固薄弱点';
+      }
+    }
+
+    function goBack() {
+      if (document.getElementById('quizView').style.display === 'block') {
+        if (!confirm('退出当前复习?进度不会保存')) return;
+      }
+      location.href = 'index.html';
+    }
+
+    (async function initReview() {
+      await loadReviewTasks();
+      renderTaskList();
+    })();
+    document.getElementById('tabBarSlot').outerHTML = renderTabBar('review');
+  </script>
+</body>
+</html>

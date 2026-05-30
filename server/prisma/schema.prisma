@@ -1,0 +1,375 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  student
+}
+
+enum GradeStage {
+  primary
+  junior
+  senior
+}
+
+enum InputType {
+  text
+  image
+  voice
+}
+
+enum QuestionStatus {
+  started
+  guiding
+  solved
+  abandoned
+}
+
+enum MessageRole {
+  user
+  assistant
+}
+
+enum MessageType {
+  analysis
+  knowledge
+  hint
+  solution
+  related
+  text
+}
+
+enum ErrorStatus {
+  weak
+  learning
+  mastered
+}
+
+enum ReviewCycle {
+  D1
+  D3
+  D7
+  D15
+}
+
+enum ReviewStatus {
+  pending
+  done
+  skipped
+  reset
+}
+
+enum AiEventType {
+  socratic_answer
+  extract_error
+  generate_variant
+  safety_check
+}
+
+enum PaymentOrderStatus {
+  pending
+  paid
+  failed
+  canceled
+  refunded
+}
+
+enum SubscriptionStatus {
+  active
+  expired
+  canceled
+}
+
+model User {
+  id             String           @id @default(uuid())
+  phone          String           @unique
+  nickname       String
+  role           UserRole         @default(student)
+  policyVersion  String?
+  termsAcceptedAt DateTime?
+  privacyAcceptedAt DateTime?
+  minorNoticeAcceptedAt DateTime?
+  profile        StudentProfile?
+  sessions       Session[]
+  authOtps       AuthOtp[]
+  questions      Question[]
+  answerSessions AnswerSession[]
+  errorRecords   ErrorRecord[]
+  reviewTasks    ReviewTask[]
+  aiEvents       AiEvent[]
+  feedback        UserFeedback[]
+  paymentOrders   PaymentOrder[]
+  subscriptions   Subscription[]
+  deviceTokens    DeviceToken[]
+  notificationDeliveries NotificationDelivery[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model AuthOtp {
+  id          String    @id @default(uuid())
+  phone       String
+  codeHash    String
+  purpose     String    @default("login")
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([phone, purpose, expiresAt])
+  @@index([userId, createdAt])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+  @@index([token, expiresAt])
+}
+
+model StudentProfile {
+  id             String     @id @default(uuid())
+  userId         String     @unique
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grade          String
+  gradeStage     GradeStage
+  targetSubjects Json       @default("[]")
+  reviewReminderEnabled Boolean @default(true)
+  reviewReminderTime String     @default("19:00")
+  quietHoursStart String        @default("21:00")
+  quietHoursEnd   String        @default("07:00")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model Subject {
+  id             String          @id @default(uuid())
+  code           String          @unique
+  name           String
+  questions      Question[]
+  knowledgeNodes KnowledgeNode[]
+  errorRecords   ErrorRecord[]
+}
+
+model KnowledgeNode {
+  id           String          @id @default(uuid())
+  subjectId    String
+  subject      Subject         @relation(fields: [subjectId], references: [id])
+  parentId     String?
+  parent       KnowledgeNode?  @relation("KnowledgeTree", fields: [parentId], references: [id])
+  children     KnowledgeNode[] @relation("KnowledgeTree")
+  name         String
+  stage        String?
+  sortOrder    Int             @default(0)
+  errorRecords ErrorRecord[]
+
+  @@index([subjectId, parentId])
+}
+
+model Question {
+  id             String           @id @default(uuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjectId      String
+  subject        Subject          @relation(fields: [subjectId], references: [id])
+  inputType      InputType
+  originalText   String?
+  imageUrl       String?
+  ocrText        String?
+  status         QuestionStatus   @default(started)
+  answerSessions AnswerSession[]
+  errorRecords   ErrorRecord[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, subjectId])
+}
+
+model AnswerSession {
+  id                  String          @id @default(uuid())
+  questionId          String
+  question            Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStep         Int             @default(0)
+  finalAnswerRevealed Boolean         @default(false)
+  solvedIndependently Boolean         @default(false)
+  messages            AnswerMessage[]
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model AnswerMessage {
+  id                String        @id @default(uuid())
+  sessionId         String
+  session           AnswerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role              MessageRole
+  messageType       MessageType
+  content           String
+  structuredPayload Json?
+  createdAt         DateTime      @default(now())
+}
+
+model ErrorRecord {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId      String
+  question        Question       @relation(fields: [questionId], references: [id])
+  subjectId       String
+  subject         Subject        @relation(fields: [subjectId], references: [id])
+  knowledgeNodeId String?
+  knowledgeNode   KnowledgeNode? @relation(fields: [knowledgeNodeId], references: [id])
+  knowledgePoint  String
+  errorReason     String
+  status          ErrorStatus    @default(weak)
+  correctStreak   Int            @default(0)
+  reviewTasks     ReviewTask[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, subjectId])
+}
+
+model ReviewTask {
+  id                String       @id @default(uuid())
+  userId            String
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  errorRecordId     String
+  errorRecord       ErrorRecord  @relation(fields: [errorRecordId], references: [id], onDelete: Cascade)
+  cycle             ReviewCycle
+  dueAt             DateTime
+  status            ReviewStatus @default(pending)
+  variantQuestion   Json
+  answeredCorrectly Boolean?
+  answeredAt        DateTime?
+  createdAt         DateTime     @default(now())
+
+  @@index([userId, status, dueAt])
+}
+
+model AiEvent {
+  id           String      @id @default(uuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventType    AiEventType
+  provider     String
+  model        String
+  promptVersion String
+  inputTokens  Int         @default(0)
+  outputTokens Int         @default(0)
+  latencyMs    Int         @default(0)
+  costEstimate Decimal     @default(0)
+  success      Boolean
+  errorMessage String?
+  createdAt    DateTime    @default(now())
+
+  @@index([userId, eventType, createdAt])
+}
+
+model UserFeedback {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int?
+  category  String
+  content   String
+  page      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([category, createdAt])
+}
+
+model PaymentOrder {
+  id              String             @id @default(uuid())
+  userId          String
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planCode        String
+  amountCents     Int
+  currency        String             @default("CNY")
+  provider        String
+  providerOrderId String?
+  checkoutUrl     String?
+  status          PaymentOrderStatus @default(pending)
+  paidAt          DateTime?
+  rawPayload      Json?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([providerOrderId])
+}
+
+model Subscription {
+  id            String             @id @default(uuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planCode      String
+  status        SubscriptionStatus @default(active)
+  startsAt      DateTime
+  expiresAt     DateTime
+  cancelAtPeriodEnd Boolean        @default(false)
+  canceledAt    DateTime?
+  sourceOrderId String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([userId, status, expiresAt])
+  @@index([sourceOrderId])
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform  String
+  provider  String
+  token     String
+  enabled   Boolean  @default(true)
+  lastSeenAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, token])
+  @@index([userId, enabled])
+}
+
+model NotificationDelivery {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceTokenId String?
+  type        String
+  title       String
+  body        String
+  provider    String
+  status      String
+  dedupeKey   String?
+  rawPayload  Json?
+  errorMessage String?
+  createdAt   DateTime @default(now())
+
+  @@unique([dedupeKey])
+  @@index([userId, type, createdAt])
+  @@index([status, createdAt])
+}

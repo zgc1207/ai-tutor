@@ -1,0 +1,21 @@
+{
+  "name": "AI 家庭教师",
+  "short_name": "AI 家教",
+  "description": "面向学生的启发式答疑、错题复习和学习报告工具。",
+  "start_url": "index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f6fa",
+  "theme_color": "#4f46e5",
+  "categories": ["education", "productivity"],
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

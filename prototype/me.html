@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AI 家教">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>我的 - AI 家庭教师</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/app-icon.svg">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="page-header">
+    <div class="page-header-title">我的</div>
+  </div>
+
+  <div class="profile-card">
+    <div class="profile-avatar" id="avatar">我</div>
+    <div>
+      <div class="profile-info-name" id="userName"></div>
+      <div class="profile-info-sub" id="userMeta"></div>
+    </div>
+  </div>
+
+  <div class="menu-list">
+    <div class="menu-item" onclick="changeGrade()">
+      <div class="menu-item-icon">🎒</div>
+      <div class="menu-item-label">年级</div>
+      <div class="menu-item-value" id="gradeValue"></div>
+      <div class="menu-item-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="configureReminder()">
+      <div class="menu-item-icon">🔔</div>
+      <div class="menu-item-label">复习提醒时间</div>
+      <div class="menu-item-value" id="reminderValue">19:00</div>
+      <div class="menu-item-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="alert('连续学习 25 分钟会提示休息；当天累计 45 分钟会提示控制节奏。')">
+      <div class="menu-item-icon">⏱</div>
+      <div class="menu-item-label">今日使用时长</div>
+      <div class="menu-item-value" id="usageValue">0 分钟</div>
+      <div class="menu-item-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="location.href='report.html'">
+      <div class="menu-item-icon">📊</div>
+      <div class="menu-item-label">学习报告</div>
+      <div class="menu-item-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="showPlanInfo()">
+      <div class="menu-item-icon">¥</div>
+      <div class="menu-item-label">内测权益</div>
+      <div class="menu-item-value" id="planValue">免费版</div>
+      <div class="menu-item-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="submitFeedback()">
+      <div class="menu-item-icon">💬</div>
+      <div class="menu-item-label">反馈问题</div>
+      <div class="menu-item-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="configureApi()">
+      <div class="menu-item-icon">🔌</div>
+      <div class="menu-item-label">后端 API</div>
+      <div class="menu-item-value" id="apiValue">未启用</div>
+      <div class="menu-item-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="exportAccountData()">
+      <div class="menu-item-icon">🧾</div>
+      <div class="menu-item-label">导出我的数据</div>
+      <div class="menu-item-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="deleteAccount()" style="color:var(--danger);">
+      <div class="menu-item-icon" style="background:var(--danger-light); color:var(--danger);">×</div>
+      <div class="menu-item-label">注销账号并删除数据</div>
+    </div>
+  </div>
+
+  <div class="menu-list">
+    <div class="menu-item" onclick="alert('AI 家庭教师 · 原型版本 v0.1\\n阶段 1:HTML 原型')">
+      <div class="menu-item-icon" style="background:#fef3c7; color:#d97706;">ℹ️</div>
+      <div class="menu-item-label">关于</div>
+      <div class="menu-item-arrow">›</div>
+    </div>
+    <div class="menu-item" onclick="logout()" style="color:var(--danger);">
+      <div class="menu-item-icon" style="background:var(--danger-light); color:var(--danger);">⎋</div>
+      <div class="menu-item-label">退出登录</div>
+    </div>
+  </div>
+
+  <div id="tabBarSlot"></div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (!requireLogin()) { /* redirecting */ }
+
+    function render() {
+      const u = UserStore.get();
+      document.getElementById('avatar').textContent = (u.nickname || '我')[0];
+      document.getElementById('userName').textContent = u.nickname;
+      document.getElementById('userMeta').textContent = `${u.gradeLabel} · 手机 ${u.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')}`;
+      document.getElementById('gradeValue').textContent = u.gradeLabel;
+      document.getElementById('apiValue').textContent = ApiClient.isEnabled() ? '已启用' : '未启用';
+      document.getElementById('planValue').textContent = u.planName || '免费版';
+      document.getElementById('reminderValue').textContent = u.reviewReminderEnabled === false
+        ? '已关闭'
+        : (u.reviewReminderTime || '19:00');
+      const usage = window.UsageGuard ? UsageGuard.read() : { totalMinutes: 0, sessionStartedAt: Date.now() };
+      const currentMinutes = Math.floor((Date.now() - usage.sessionStartedAt) / 60000);
+      document.getElementById('usageValue').textContent = `${usage.totalMinutes + Math.max(currentMinutes, 0)} 分钟`;
+    }
+
+    function isTime(value) {
+      return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+    }
+
+    async function configureReminder() {
+      const u = UserStore.get();
+      const enabledText = prompt('是否开启复习提醒? 输入 yes 或 no', u.reviewReminderEnabled === false ? 'no' : 'yes');
+      if (enabledText === null) return;
+      const enabled = enabledText.trim().toLowerCase() !== 'no';
+      let reviewReminderTime = u.reviewReminderTime || '19:00';
+      if (enabled) {
+        const time = prompt('复习提醒时间 (HH:mm)', reviewReminderTime);
+        if (time === null) return;
+        if (!isTime(time.trim())) {
+          alert('请输入 00:00-23:59 格式的时间');
+          return;
+        }
+        reviewReminderTime = time.trim();
+      }
+      const next = {
+        ...u,
+        reviewReminderEnabled: enabled,
+        reviewReminderTime,
+        quietHoursStart: u.quietHoursStart || '21:00',
+        quietHoursEnd: u.quietHoursEnd || '07:00',
+      };
+      UserStore.set(next);
+      render();
+      if (!ApiClient.isEnabled()) return;
+      try {
+        if (!ApiClient.getServerUserId()) {
+          await ApiClient.login(UserStore.get());
+        }
+        const result = await ApiClient.updateReminder({
+          reviewReminderEnabled: next.reviewReminderEnabled,
+          reviewReminderTime: next.reviewReminderTime,
+          quietHoursStart: next.quietHoursStart,
+          quietHoursEnd: next.quietHoursEnd,
+        });
+        UserStore.set({
+          ...UserStore.get(),
+          reviewReminderEnabled: result.reminder.reviewReminderEnabled,
+          reviewReminderTime: result.reminder.reviewReminderTime,
+          quietHoursStart: result.reminder.quietHoursStart,
+          quietHoursEnd: result.reminder.quietHoursEnd,
+        });
+        render();
+      } catch (error) {
+        alert(`提醒设置已保存在本地, 但同步后端失败:${error.message}`);
+      }
+    }
+
+    async function showPlanInfo() {
+      if (!ApiClient.isEnabled()) {
+        alert('内测免费版\n每日提问和 AI 引导次数受本地/后端配置限制。接入支付前不会产生费用。');
+        return;
+      }
+      try {
+        const [data, billing] = await Promise.all([
+          ApiClient.getPlans(),
+          ApiClient.getBillingStatus(),
+        ]);
+        const text = data.plans.map(plan => [
+          `${plan.name}`,
+          plan.priceCentsMonthly ? `价格: ¥${(plan.priceCentsMonthly / 100).toFixed(2)}/月` : '价格: 免费',
+          `每日提问: ${plan.dailyQuestionLimit}`,
+          `AI 引导: ${plan.dailyAiStepLimit}`,
+          `家长报告: ${plan.features.parentReport === 'weekly_detailed' ? '详细周报' : '基础周报'}`,
+          plan.note,
+        ].join('\n')).join('\n\n');
+        const activeText = billing.activeSubscription
+          ? `当前订阅: ${billing.activeSubscription.planCode}, 有效期至 ${new Date(billing.activeSubscription.expiresAt).toLocaleDateString()}${billing.activeSubscription.cancelAtPeriodEnd ? '，到期不续订' : ''}`
+          : '当前订阅: 免费版';
+        const statusText = data.payment?.productionReady
+          ? '支付状态: 已配置外部支付 provider'
+          : '支付状态: 开发 provider, 仅用于联调';
+        if (billing.activeSubscription && !billing.activeSubscription.cancelAtPeriodEnd) {
+          const shouldCancel = confirm(`${text}\n\n${activeText}\n${statusText}\n\n是否取消自动续订?当前周期内仍保留 Plus 权益。`);
+          if (!shouldCancel) return;
+          const canceled = await ApiClient.cancelSubscription({ cancelAtPeriodEnd: true });
+          alert(`已取消自动续订。\nPlus 有效期至 ${new Date(canceled.effectiveAt).toLocaleDateString()}`);
+          return;
+        }
+        const shouldCheckout = confirm(`${text}\n\n${activeText}\n${statusText}\n\n是否创建 Plus 订阅订单?`);
+        if (!shouldCheckout) return;
+        const checkout = await ApiClient.createCheckout({ planCode: 'plus' });
+        if (checkout.checkoutUrl?.startsWith('http')) {
+          location.href = checkout.checkoutUrl;
+          return;
+        }
+        const checkoutUrl = `${ApiClient.getBaseUrl()}${checkout.checkoutUrl}`;
+        window.open(checkoutUrl, '_blank', 'noopener');
+        alert(`订单已创建。\n订单号: ${checkout.order.id}\n支付链接: ${checkoutUrl}`);
+      } catch (error) {
+        alert(`权益信息加载失败:${error.message}`);
+      }
+    }
+
+    async function changeGrade() {
+      const u = UserStore.get();
+      const opts = GRADES.map((g, i) => `${i + 1}. ${g.label}${g.value === u.grade ? ' ✓' : ''}`).join('\n');
+      const v = prompt('选择新年级 (输入序号 1-' + GRADES.length + ')\n\n' + opts);
+      const idx = parseInt(v, 10);
+      if (!idx || idx < 1 || idx > GRADES.length) return;
+      const g = GRADES[idx - 1];
+      UserStore.set({ ...u, grade: g.value, gradeLabel: g.label, gradeStage: g.stage });
+      render();
+      if (!ApiClient.isEnabled()) return;
+      try {
+        if (!ApiClient.getServerUserId()) {
+          await ApiClient.login(UserStore.get());
+        }
+        await ApiClient.updateProfile({ grade: g.value, gradeStage: g.stage });
+      } catch (error) {
+        alert(`本地年级已更新, 但同步后端失败:${error.message}`);
+      }
+    }
+
+    function logout() {
+      if (!confirm('确定退出登录?本地数据会被清除')) return;
+      ApiClient.logout().catch(() => ApiClient.clearSession()).finally(() => {
+        UserStore.clear();
+        location.replace('login.html');
+      });
+    }
+
+    async function configureApi() {
+      const current = ApiClient.getBaseUrl();
+      const value = prompt('输入后端 API 地址, 留空则关闭\n例如: http://localhost:3000', current);
+      if (value === null) return;
+      ApiClient.setBaseUrl(value);
+      ApiClient.clearSession();
+
+      if (ApiClient.isEnabled()) {
+        try {
+          await ApiClient.login(UserStore.get());
+          alert('后端 API 已启用, 当前账号已同步');
+        } catch (error) {
+          alert(`API 地址已保存, 但同步登录失败: ${error.message}`);
+        }
+      }
+      render();
+    }
+
+    async function submitFeedback() {
+      const content = prompt('请描述你遇到的问题或建议');
+      if (!content || !content.trim()) return;
+      const ratingText = prompt('给当前体验打分 1-5 (可留空)', '5');
+      const rating = ratingText ? parseInt(ratingText, 10) : undefined;
+      if (ratingText && (!rating || rating < 1 || rating > 5)) {
+        alert('评分请输入 1-5');
+        return;
+      }
+      if (!ApiClient.isEnabled()) {
+        alert('请先在“后端 API”中配置服务地址, 才能提交反馈');
+        return;
+      }
+      try {
+        if (!ApiClient.getServerUserId()) {
+          await ApiClient.login(UserStore.get());
+        }
+        await ApiClient.submitFeedback({
+          rating,
+          category: 'ux',
+          content: content.trim(),
+          page: 'me',
+        });
+        alert('反馈已提交');
+      } catch (error) {
+        alert(`反馈提交失败:${error.message}`);
+      }
+    }
+
+    async function ensureServerSession() {
+      if (!ApiClient.isEnabled()) {
+        alert('请先在“后端 API”中配置服务地址');
+        return false;
+      }
+      if (!ApiClient.getServerUserId()) {
+        await ApiClient.login(UserStore.get());
+      }
+      return true;
+    }
+
+    async function exportAccountData() {
+      try {
+        if (!await ensureServerSession()) return;
+        const data = await ApiClient.exportAccountData();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `ai-tutor-account-${Date.now()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        alert(`数据导出失败:${error.message}`);
+      }
+    }
+
+    async function deleteAccount() {
+      if (!confirm('确定注销账号并删除后端学习数据?此操作不可恢复')) return;
+      const text = prompt('请输入“确认删除”继续');
+      if (text !== '确认删除') return;
+      try {
+        if (!await ensureServerSession()) return;
+        await ApiClient.deleteAccount();
+        UserStore.clear();
+        alert('账号和后端学习数据已删除');
+        location.replace('login.html');
+      } catch (error) {
+        alert(`账号注销失败:${error.message}`);
+      }
+    }
+
+    render();
+    document.getElementById('tabBarSlot').outerHTML = renderTabBar('me');
+  </script>
+</body>
+</html>
