@@ -107,6 +107,8 @@ checks.push(!missingApiCalls.length
 
 checks.push(appSource.includes('enterDemoMode')
   && appSource.includes('DEMO_DASHBOARD')
+  && appSource.includes('DEMO_SAMPLE_QUESTIONS')
+  && appSource.includes('当前流程')
   && appSource.includes('体验演示')
   && appSource.includes('演示模式')
   ? pass('mobile.demoExperience', { entry: '体验演示' })

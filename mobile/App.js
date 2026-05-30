@@ -82,6 +82,21 @@ const DEMO_KNOWLEDGE_TREE = [
   },
 ];
 
+const DEMO_SAMPLE_QUESTIONS = [
+  {
+    label: '数学方程',
+    text: '解方程: 3x - 5 = 10。请引导我一步步分析, 不要直接给最终答案。',
+  },
+  {
+    label: '英语时态',
+    text: 'I ____ to school yesterday. A. go B. went C. goes。请先提示我判断时间状语。',
+  },
+  {
+    label: '物理压强',
+    text: '一个物体重 20N, 与桌面的接触面积是 0.01m², 求压强。请引导我列公式。',
+  },
+];
+
 function Button({ label, onPress, secondary = false }) {
   return h(
     TouchableOpacity,
@@ -114,6 +129,16 @@ function Metric({ label, value }) {
     { style: styles.metric },
     h(Text, { style: styles.metricValue }, String(value ?? '--')),
     h(Text, { style: styles.metricLabel }, label),
+  );
+}
+
+function QuickCard({ title, body, action, onPress }) {
+  return h(
+    TouchableOpacity,
+    { style: styles.quickCard, onPress },
+    h(Text, { style: styles.quickTitle }, title),
+    h(Text, { style: styles.quickBody }, body),
+    h(Text, { style: styles.quickAction }, action),
   );
 }
 
@@ -193,6 +218,12 @@ export default function App() {
     setBillingStatus({ activeSubscription: null, recentOrders: [] });
     setTab('home');
     setStatus('已进入体验演示: 不需要后端, 可先查看核心学习闭环');
+  }
+
+  function loadDemoQuestion(sample) {
+    setQuestionText(sample.text);
+    setTab('ask');
+    setStatus(`已填入示例题: ${sample.label}`);
   }
 
   async function login() {
@@ -503,12 +534,29 @@ export default function App() {
       { style: styles.card },
       h(Text, { style: styles.title }, '今日学习'),
       demoMode ? h(Text, { style: styles.demoBadge }, '体验演示') : null,
+      h(Text, { style: styles.subtitle }, '先提问, 再根据引导完成思考; 做错的题会进入错题本和复习计划。'),
       h(View, { style: styles.metrics }, [
         h(Metric, { key: 'questions', label: '提问', value: dashboard?.today?.questions || dashboard?.questionCount || 0 }),
         h(Metric, { key: 'mistakes', label: '错题', value: dashboard?.today?.mistakes || dashboard?.mistakeCount || 0 }),
         h(Metric, { key: 'reviews', label: '复习', value: dashboard?.today?.reviews || dashboard?.reviewCount || 0 }),
       ]),
-      h(Button, { label: '刷新学习概览', onPress: loadHome }),
+      h(View, { style: styles.quickGrid }, [
+        h(QuickCard, {
+          key: 'ask',
+          title: '开始一道题',
+          body: '输入题目或模拟拍照识别, 看 AI 如何一步步提示。',
+          action: '去提问',
+          onPress: () => setTab('ask'),
+        }),
+        h(QuickCard, {
+          key: 'review',
+          title: '今日复习',
+          body: `${reviewTasks.length || 0} 个任务等待巩固, 按间隔复习推进掌握。`,
+          action: '看复习',
+          onPress: () => setTab('review'),
+        }),
+      ]),
+      h(Button, { label: '刷新学习概览', onPress: loadHome, secondary: true }),
       h(View, { style: styles.highlight },
         h(Text, { style: styles.listTitle }, '核心流程'),
         h(Text, { style: styles.bodyText }, '提问获得启发式引导, 仍不会直接泄露答案; 做错后加入错题本, 自动生成间隔复习任务。'),
@@ -522,6 +570,11 @@ export default function App() {
       { style: styles.card },
       h(Text, { style: styles.title }, '文字提问'),
       demoMode ? h(Text, { style: styles.demoBadge }, '演示模式: 可输入任意题目测试流程') : null,
+      demoMode ? h(View, { style: styles.sampleRow }, DEMO_SAMPLE_QUESTIONS.map(sample => h(
+        TouchableOpacity,
+        { key: sample.label, style: styles.sampleChip, onPress: () => loadDemoQuestion(sample) },
+        h(Text, { style: styles.sampleChipText }, sample.label),
+      ))) : null,
       h(Field, {
         label: '题目',
         value: questionText,
@@ -535,6 +588,12 @@ export default function App() {
       ]),
       imageStatus ? h(Text, { style: styles.hint }, imageStatus) : null,
       h(Button, { label: '获取启发式引导', onPress: ask }),
+      currentQuestionId ? h(View, { style: styles.flowPanel }, [
+        h(Text, { key: 'flow-title', style: styles.listTitle }, '当前流程'),
+        h(Text, { key: 'flow-1', style: styles.flowStep }, '1. 已记录题目'),
+        h(Text, { key: 'flow-2', style: styles.flowStep }, `2. 已生成 ${Math.max(answerMessages.length - 1, 0)} 条引导`),
+        h(Text, { key: 'flow-3', style: styles.flowStep }, '3. 可继续提示, 或加入错题生成复习'),
+      ]) : null,
       currentQuestionId ? h(View, { style: styles.actionRow }, [
         h(Button, { key: 'next', label: '下一步提示', onPress: getNextGuide, secondary: true }),
         h(Button, { key: 'mistake', label: '加入错题', onPress: () => finishCurrentQuestion({ solvedIndependently: false }), secondary: true }),
@@ -754,6 +813,68 @@ const styles = StyleSheet.create({
     color: '#047857',
     fontSize: 12,
     fontWeight: '700',
+  },
+  quickGrid: {
+    gap: 10,
+    marginBottom: 12,
+  },
+  quickCard: {
+    padding: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#c7d2fe',
+    backgroundColor: '#eef2ff',
+  },
+  quickTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  quickBody: {
+    marginTop: 5,
+    fontSize: 13,
+    color: '#4b5563',
+    lineHeight: 19,
+  },
+  quickAction: {
+    marginTop: 8,
+    fontSize: 13,
+    color: '#4f46e5',
+    fontWeight: '700',
+  },
+  sampleRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
+  sampleChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+  },
+  sampleChipText: {
+    fontSize: 12,
+    color: '#374151',
+    fontWeight: '700',
+  },
+  flowPanel: {
+    marginTop: 2,
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  flowStep: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#4b5563',
+    lineHeight: 19,
   },
   container: {
     padding: 16,
