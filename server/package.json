@@ -11,6 +11,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "node prisma/seed.js",
     "config:check": "node scripts/check-config.js",
+    "runtime:check": "node scripts/check-local-runtime.js",
     "deploy:check": "node scripts/check-deploy-config.js",
     "db:setup": "prisma migrate deploy && node prisma/seed.js",
     "db:check": "node scripts/check-db.js",

@@ -18,7 +18,15 @@ npm install
 cp .env.example .env
 ```
 
-3. 启动 PostgreSQL:
+3. 检查本地运行环境:
+
+```bash
+npm run runtime:check
+```
+
+该命令会检查 Node、npm、Docker、docker compose、psql、`DATABASE_URL`、`server/.env` 和根目录 `compose.yaml`。如果 Docker 或数据库配置缺失, 会直接给出下一步修复动作。
+
+4. 启动 PostgreSQL:
 
 项目根目录提供了 `compose.yaml`。如果本机已安装 Docker:
 
@@ -28,7 +36,7 @@ docker compose up -d postgres
 
 如果本机直接安装 PostgreSQL, 只需保证 `.env` 里的 `DATABASE_URL` 可连接。
 
-4. 初始化数据库:
+5. 初始化数据库:
 
 ```bash
 npm run db:setup
@@ -36,13 +44,13 @@ npm run db:setup
 
 `db:setup` 会执行 `prisma migrate deploy` 并写入基础科目与知识树种子数据。开发阶段如需生成新迁移, 使用 `npm run prisma:migrate`。
 
-5. 启动服务:
+6. 启动服务:
 
 ```bash
 npm run dev
 ```
 
-6. 跑通 API smoke:
+7. 跑通 API smoke:
 
 ```bash
 npm run smoke:api
@@ -180,6 +188,7 @@ AUTH_OTP_MIN_INTERVAL_SECONDS=60
 npx prisma validate
 npm run prisma:generate
 npm run config:check
+npm run runtime:check
 npm run prototype:check
 npm run mobile:check
 npm run deploy:check -- --profile internal
@@ -197,7 +206,7 @@ npm run ops:check -- --days 7
 npm run eval:ai
 ```
 
-其中 `npm run prisma:deploy`、`npm run prisma:seed`、`npm run db:check` 和 `npm run smoke:api` 需要 PostgreSQL 已启动。
+其中 `npm run runtime:check`、`npm run prisma:deploy`、`npm run prisma:seed`、`npm run db:check` 和 `npm run smoke:api` 需要或检查本地运行环境; 数据库相关命令需要 PostgreSQL 已启动。
 `npm run verify:static` 是无需数据库的一键验证, 会执行 JS 语法检查、Prisma Client 生成、Prisma schema 校验、配置检查、上传清理、AI 评测和静态 readiness。仓库也提供 GitHub Actions workflow `Server Static Verification`, 用于 PR 和 main 分支推送时自动执行同一检查。
 `npm run prototype:check` 会检查 `prototype` 的 PWA 安装配置、service worker 缓存清单、离线页和原型 JS 语法; H5 内测分发前应单独执行一次。
 `prototype/admin.html` 是静态内测运营控制台, 可配置后端 API 地址和 `ADMIN_TOKEN`, 聚合健康闸口、关键指标、商业化对账、内容审核和最近用户。该页面只适合内部访问, 如果随 H5 一起托管, 必须通过独立域名、VPN、基础认证或平台访问控制限制公开访问, 并确保后端 `CORS_ALLOWED_ORIGINS` 只允许可信来源。

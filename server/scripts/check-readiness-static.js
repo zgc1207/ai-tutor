@@ -9,6 +9,7 @@ const SERVER_DIR = process.cwd();
 
 const REQUIRED_SCRIPTS = [
   'config:check',
+  'runtime:check',
   'deploy:check',
   'db:setup',
   'db:check',
@@ -63,6 +64,7 @@ const REQUIRED_MOBILE_FILES = [
   'mobile/src/device/native-features.js',
   'mobile/src/storage/session-store.js',
   'mobile/scripts/check-mobile-static.js',
+  'mobile/scripts/start-expo-local.js',
   'mobile/README.md',
 ];
 
