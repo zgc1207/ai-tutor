@@ -7,6 +7,7 @@
 当前范围:
 
 - App 身份已使用 `com.zgc1207.aitutor` 作为 iOS bundle identifier 和 Android package, 静态检查会阻止继续使用 `com.example.*`。
+- 已补充 EAS 构建配置和本地版本号: iOS `buildNumber`、Android `versionCode`, 并提供 preview 内测包构建脚本。
 - OTP 登录前必须显式勾选同意用户协议、隐私政策和未成年人使用说明; 客户端不再默认代填 `consentAccepted`。
 - 登录页提供“体验演示”入口, 不需要后端和验证码即可查看首页、提问、错题、复习、报告和知识图谱核心体验。
 - 体验演示内置数学、英语、物理示例题, 首页提供“开始一道题”和“今日复习”行动入口, 提问页会展示当前引导流程进度。
@@ -60,6 +61,15 @@ npm run api:local
 - iOS Simulator 通常使用 `http://127.0.0.1:3000`。
 - Android Emulator 通常使用 `http://10.0.2.2:3000`。
 - 真机 Expo Go 需要手机和电脑在同一 Wi-Fi, 然后把 `expoGoDeviceUrls` 中的地址填到登录页“后端 API”。
+
+生成内测包:
+
+```bash
+npm run build:android:preview
+npm run build:ios:preview
+```
+
+构建前需要先登录 Expo/EAS, 并为 iOS 配置 Apple 开发者账号、证书和设备; Android preview 默认输出 APK, 便于内部安装验证。
 
 体验演示:
 

@@ -17,6 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.zgc1207.aitutor",
+      "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "用于拍摄题目图片并识别题干。",
         "NSPhotoLibraryUsageDescription": "用于选择题目图片并识别题干。",
@@ -25,6 +26,7 @@
     },
     "android": {
       "package": "com.zgc1207.aitutor",
+      "versionCode": 1,
       "permissions": [
         "CAMERA",
         "READ_MEDIA_IMAGES",

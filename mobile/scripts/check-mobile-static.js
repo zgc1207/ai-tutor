@@ -6,6 +6,7 @@ const ROOT = process.cwd();
 const REQUIRED_FILES = [
   'package.json',
   'app.json',
+  'eas.json',
   'App.js',
   'src/api/client.js',
   'src/device/native-features.js',
@@ -44,6 +45,7 @@ checks.push(!missingDependencies.length
   : fail('mobile.dependencies', { dependencies: pkg.dependencies || {} }));
 
 const appConfig = readJson('app.json').expo;
+const easConfig = readJson('eas.json');
 const iosBundleIdentifier = appConfig?.ios?.bundleIdentifier || '';
 const androidPackage = appConfig?.android?.package || '';
 const appIdPattern = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){2,}$/;
@@ -58,18 +60,41 @@ checks.push(appConfig?.name
   && appConfig?.ios?.infoPlist?.NSCameraUsageDescription
   && appConfig?.ios?.infoPlist?.NSPhotoLibraryUsageDescription
   && appConfig?.ios?.infoPlist?.NSUserNotificationsUsageDescription
+  && appConfig?.ios?.buildNumber
+  && Number.isInteger(appConfig?.android?.versionCode)
   && missingAndroidPermissions.length === 0
   ? pass('mobile.appConfig', {
       appName: appConfig.name,
       slug: appConfig.slug,
       iosBundleIdentifier,
+      iosBuildNumber: appConfig.ios.buildNumber,
       androidPackage,
+      androidVersionCode: appConfig.android.versionCode,
       androidPermissions: appConfig.android.permissions,
     })
   : fail('mobile.appConfig', {
       appConfig,
       missingAndroidPermissions,
       message: 'App config must use production-style package identifiers and explicit permission descriptions.',
+    }));
+
+const requiredBuildProfiles = ['development', 'preview', 'production'];
+const missingBuildProfiles = requiredBuildProfiles.filter(profile => !easConfig?.build?.[profile]);
+checks.push(missingBuildProfiles.length === 0
+  && easConfig?.cli?.appVersionSource === 'local'
+  && easConfig?.build?.preview?.distribution === 'internal'
+  && easConfig?.build?.preview?.android?.buildType === 'apk'
+  && easConfig?.build?.production?.android?.buildType === 'app-bundle'
+  && pkg.scripts?.['build:android:preview']
+  && pkg.scripts?.['build:ios:preview']
+  ? pass('mobile.easBuildConfig', {
+      profiles: requiredBuildProfiles,
+      previewDistribution: easConfig.build.preview.distribution,
+    })
+  : fail('mobile.easBuildConfig', {
+      missingBuildProfiles,
+      easConfig,
+      scripts: pkg.scripts,
     }));
 
 const jsFiles = [

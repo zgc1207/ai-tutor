@@ -11,6 +11,8 @@
     "android": "expo start --android",
     "web": "expo start --web",
     "api:local": "node scripts/print-local-api.js",
+    "build:android:preview": "npx eas-cli build --platform android --profile preview",
+    "build:ios:preview": "npx eas-cli build --platform ios --profile preview",
     "verify:static": "node scripts/check-mobile-static.js"
   },
   "dependencies": {
