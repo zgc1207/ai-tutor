@@ -189,6 +189,7 @@ export default function App() {
   const [plans, setPlans] = useState([]);
   const [billingStatus, setBillingStatus] = useState(null);
   const [knowledgeTree, setKnowledgeTree] = useState([]);
+  const [demoPlusActive, setDemoPlusActive] = useState(false);
 
   const api = useMemo(
     () => createApiClient({ baseUrl: apiBase, sessionToken, onSessionToken: setSessionToken }),
@@ -566,7 +567,15 @@ export default function App() {
 
   async function checkoutPlus() {
     if (demoMode) {
-      setStatus('演示: 真实支付会在接入 IAP 或渠道支付后打开');
+      setDemoPlusActive(true);
+      setBillingStatus({
+        activeSubscription: {
+          planCode: 'plus',
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        recentOrders: [{ id: 'demo-order-1', status: 'paid', amountCents: 2900 }],
+      });
+      setStatus('演示: 已开通 Plus, 真实版本会接入 IAP 或渠道支付');
       return;
     }
     const result = await run('创建订阅订单', () => api.createCheckout({ planCode: 'plus' }));
@@ -578,6 +587,8 @@ export default function App() {
 
   async function cancelPlus() {
     if (demoMode) {
+      setDemoPlusActive(false);
+      setBillingStatus({ activeSubscription: null, recentOrders: [] });
       setStatus('演示: 已模拟取消自动续订');
       return;
     }
@@ -597,6 +608,7 @@ export default function App() {
     setMistakes([]);
     setReport(null);
     setBillingStatus(null);
+    setDemoPlusActive(false);
     setKnowledgeTree([]);
     setStatus('已退出当前账号');
   }
@@ -872,21 +884,37 @@ export default function App() {
 
   function renderPlus() {
     const plus = plans.find(plan => plan.code === 'plus');
-    const active = billingStatus?.activeSubscription;
+    const active = demoMode && demoPlusActive
+      ? billingStatus?.activeSubscription || { expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }
+      : billingStatus?.activeSubscription;
     const expiresAt = active?.expiresAt ? new Date(active.expiresAt).toLocaleDateString() : '--';
+    const freeDailyQuestions = 50;
+    const freeDailyAiSteps = 150;
+    const plusDailyQuestions = plus?.limits?.dailyQuestions || 200;
+    const plusDailyAiSteps = plus?.limits?.dailyAiSteps || 600;
     return h(
       View,
       { style: styles.card },
       h(Text, { style: styles.title }, 'Plus 订阅'),
       h(Text, { style: styles.subtitle }, active ? `Plus 有效期至 ${expiresAt}` : 'Plus 可提升每日提问和 AI 引导额度'),
       h(Button, { label: '刷新订阅状态', onPress: loadPlans, secondary: true }),
-      plus && h(
-        View,
-        { style: styles.highlight },
-        h(Text, { style: styles.listTitle }, plus.name || 'Plus'),
-        h(Text, { style: styles.bodyText }, `¥${((plus.priceCentsMonthly || 0) / 100).toFixed(2)} / 月`),
-        h(Text, { style: styles.bodyText }, `每日提问 ${plus.limits?.dailyQuestions || '--'} 次, AI 引导 ${plus.limits?.dailyAiSteps || '--'} 步`),
-      ),
+      h(View, { style: styles.planCompare }, [
+        h(View, { key: 'free', style: styles.planCard },
+          h(Text, { style: styles.sectionLabel }, '免费版'),
+          h(Text, { style: styles.listTitle }, '日常试用'),
+          h(Text, { style: styles.bodyText }, `每日提问 ${freeDailyQuestions} 次`),
+          h(Text, { style: styles.bodyText }, `AI 引导 ${freeDailyAiSteps} 步`),
+        ),
+        h(View, { key: 'plus', style: [styles.planCard, styles.planCardActive] },
+          h(View, { style: styles.listHeader }, [
+            h(Text, { key: 'title', style: styles.listTitle }, plus?.name || 'Plus'),
+            active ? h(StatusPill, { key: 'status', label: '已开通', tone: 'success' }) : h(StatusPill, { key: 'status', label: '推荐', tone: 'warning' }),
+          ]),
+          h(Text, { style: styles.bodyText }, `¥${((plus?.priceCentsMonthly || 2900) / 100).toFixed(2)} / 月`),
+          h(Text, { style: styles.bodyText }, `每日提问 ${plusDailyQuestions} 次`),
+          h(Text, { style: styles.bodyText }, `AI 引导 ${plusDailyAiSteps} 步`),
+        ),
+      ]),
       h(Button, { label: active ? '续费 Plus' : '开通 Plus', onPress: checkoutPlus }),
       active ? h(Button, { label: '取消自动续订', onPress: cancelPlus, secondary: true }) : null,
       billingStatus?.recentOrders?.length
@@ -900,13 +928,27 @@ export default function App() {
   }
 
   function renderMe() {
+    const accountMode = demoMode ? '体验演示账号' : '正式登录账号';
     return h(
       View,
       { style: styles.card },
       h(Text, { style: styles.title }, '我的'),
       h(Text, { style: styles.subtitle }, demoMode ? '当前为体验演示, 未连接真实账号' : (sessionToken ? '已通过 session token 登录' : '未登录')),
-      h(Text, { style: styles.hint }, `复习提醒设备: ${pushStatus}`),
+      h(View, { style: styles.reportSection },
+        h(Text, { style: styles.sectionLabel }, '账号状态'),
+        h(Text, { style: styles.listTitle }, accountMode),
+        h(Text, { style: styles.bodyText }, '一个登录账号只对应一个学生档案, 不提供多学生切换。'),
+      ),
+      h(View, { style: styles.reportSection },
+        h(Text, { style: styles.sectionLabel }, '复习提醒'),
+        h(Text, { style: styles.listTitle }, pushStatus === '未注册' ? '未开启' : '已开启'),
+        h(Text, { style: styles.bodyText }, `设备: ${pushStatus}`),
+      ),
       h(Button, { label: '开启复习提醒', onPress: enableReviewPush }),
+      h(View, { style: styles.actionRow }, [
+        h(Button, { key: 'report', label: '看周报', onPress: () => setTab('report'), secondary: true }),
+        h(Button, { key: 'plus', label: '管理 Plus', onPress: () => setTab('plus'), secondary: true }),
+      ]),
       h(Button, { label: '退出登录', onPress: logout, secondary: true }),
     );
   }
@@ -1274,6 +1316,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#e5e7eb',
+  },
+  planCompare: {
+    gap: 10,
+    marginBottom: 12,
+  },
+  planCard: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#f8fafc',
+  },
+  planCardActive: {
+    borderColor: '#c7d2fe',
+    backgroundColor: '#eef2ff',
   },
   listTitle: {
     fontSize: 15,
