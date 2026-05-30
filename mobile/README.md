@@ -14,6 +14,7 @@
 - 知识图谱以状态卡片展示薄弱、学习中、已掌握知识点, 并可跳转到相关错题或复习计划。
 - Plus 页展示免费版和 Plus 权益对比, 演示模式下可模拟开通/取消; 我的页展示账号状态、复习提醒和周报/Plus 入口。
 - 我的页提供内测诊断: 可刷新账号/学生档案/今日额度, 并检查后端 `/health` 和 `/ready` 是否可用。
+- 登录页提供 iOS/Android 模拟器 API 快捷配置; 真机 Expo Go 可用 `npm run api:local` 获取局域网后端地址。
 - 使用 `/auth/otp/request` 和 `/auth/otp/login` 做内测登录。
 - 所有业务请求只使用 bearer `sessionToken`, 不使用 `x-user-id`。
 - 使用 `expo-secure-store` 保存 API 地址和 session token。
@@ -44,6 +45,16 @@ npm run start:local
 ```
 
 `start:local` 会把 Expo 的 HOME 指到 `mobile/.expo-home`, 并使用 `--localhost` 启动 Metro。该目录已加入 `.gitignore`, 不会进入仓库。
+
+连接本机后端:
+
+```bash
+npm run api:local
+```
+
+- iOS Simulator 通常使用 `http://127.0.0.1:3000`。
+- Android Emulator 通常使用 `http://10.0.2.2:3000`。
+- 真机 Expo Go 需要手机和电脑在同一 Wi-Fi, 然后把 `expoGoDeviceUrls` 中的地址填到登录页“后端 API”。
 
 体验演示:
 

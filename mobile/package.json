@@ -10,6 +10,7 @@
     "ios": "expo start --ios",
     "android": "expo start --android",
     "web": "expo start --web",
+    "api:local": "node scripts/print-local-api.js",
     "verify:static": "node scripts/check-mobile-static.js"
   },
   "dependencies": {

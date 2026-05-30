@@ -10,6 +10,7 @@ const REQUIRED_FILES = [
   'src/api/client.js',
   'src/device/native-features.js',
   'src/storage/session-store.js',
+  'scripts/print-local-api.js',
   'scripts/start-expo-local.js',
   'README.md',
 ];
@@ -58,6 +59,7 @@ const jsFiles = [
   'src/device/native-features.js',
   'src/storage/session-store.js',
   'scripts/check-mobile-static.js',
+  'scripts/print-local-api.js',
   'scripts/start-expo-local.js',
 ];
 const syntaxFailures = jsFiles
@@ -125,6 +127,9 @@ checks.push(appSource.includes('enterDemoMode')
   && appSource.includes('检查后端状态')
   && appSource.includes('今日额度')
   && appSource.includes('内测诊断')
+  && appSource.includes('API_PRESETS')
+  && appSource.includes('Android 模拟器')
+  && appSource.includes('npm run api:local')
   && appSource.includes('仍不会')
   && appSource.includes('体验演示')
   && appSource.includes('演示模式')

@@ -139,6 +139,19 @@ const DEMO_SAMPLE_QUESTIONS = [
   },
 ];
 
+const API_PRESETS = [
+  {
+    label: 'iOS 模拟器',
+    value: 'http://127.0.0.1:3000',
+    hint: '适合 iOS Simulator 或本机 Web 调试',
+  },
+  {
+    label: 'Android 模拟器',
+    value: 'http://10.0.2.2:3000',
+    hint: '适合 Android Emulator 访问宿主机后端',
+  },
+];
+
 function Button({ label, onPress, secondary = false }) {
   return h(
     TouchableOpacity,
@@ -189,6 +202,14 @@ function StatusPill({ label, tone = 'neutral' }) {
     Text,
     { style: [styles.statusPill, styles[`statusPill_${tone}`]] },
     label,
+  );
+}
+
+function ApiPresetButton({ preset, onSelect }) {
+  return h(
+    TouchableOpacity,
+    { style: styles.apiPreset, onPress: () => onSelect(preset) },
+    h(Text, { style: styles.apiPresetText }, preset.label),
   );
 }
 
@@ -283,6 +304,12 @@ export default function App() {
     setQuestionText(sample.text);
     setTab('ask');
     setStatus(`已填入示例题: ${sample.label}`);
+  }
+
+  async function useApiPreset(preset) {
+    setApiBase(preset.value);
+    await saveApiBase(preset.value);
+    setStatus(`已选择 ${preset.label}: ${preset.hint}`);
   }
 
   async function login() {
@@ -693,6 +720,11 @@ export default function App() {
       h(Text, { style: styles.title }, 'AI 家庭教师'),
       h(Text, { style: styles.subtitle }, '一个账号对应一个学生档案, 数据只跟随当前登录账号'),
       h(Field, { label: '后端 API', value: apiBase, onChangeText: setApiBase, placeholder: 'https://api.example.com' }),
+      h(View, { style: styles.apiPresetRow }, API_PRESETS.map(preset => h(
+        ApiPresetButton,
+        { key: preset.label, preset, onSelect: useApiPreset },
+      ))),
+      h(Text, { style: styles.hint }, '真机 Expo Go 不能用 localhost, 请运行 npm run api:local 后填入局域网地址。'),
       h(Field, { label: '手机号', value: phone, onChangeText: setPhone, placeholder: '内测手机号' }),
       h(Field, { label: '邀请码', value: inviteCode, onChangeText: setInviteCode, placeholder: '可选' }),
       h(Button, { label: '发送验证码', onPress: requestOtp, secondary: true }),
@@ -1181,6 +1213,26 @@ const styles = StyleSheet.create({
   sampleChipText: {
     fontSize: 12,
     color: '#374151',
+    fontWeight: '700',
+  },
+  apiPresetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: -4,
+    marginBottom: 8,
+  },
+  apiPreset: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  apiPresetText: {
+    fontSize: 12,
+    color: '#334155',
     fontWeight: '700',
   },
   flowPanel: {
