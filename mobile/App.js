@@ -162,6 +162,42 @@ const FEEDBACK_CATEGORIES = [
   { label: '其他', value: 'other' },
 ];
 
+const LEGAL_DOCS = {
+  terms: {
+    title: '用户协议',
+    version: POLICY_VERSION,
+    items: [
+      'AI 家庭教师提供拍照/文本提问、启发式答疑、错题整理、复习任务和学习报告等学习辅助服务。',
+      '一个登录用户只对应一个学生, 学习数据按账号隔离, 不提供多学生切换。',
+      'AI 输出不能替代学校教学、教师判断、考试官方答案或监护人的教育决策。',
+      '不得使用本产品代写作业、考试作弊、上传违法内容或上传他人个人信息。',
+      '内测阶段可通过产品内反馈入口提交账号、内容、隐私和未成年人保护问题。',
+    ],
+  },
+  privacy: {
+    title: '隐私政策',
+    version: POLICY_VERSION,
+    items: [
+      '我们只收集学习辅导、错题复习、账号安全、服务改进和合规要求所必需的信息。',
+      '可能处理手机号、学生年级、文本/图片题目、OCR 文本、AI 对话、错题、复习任务、反馈和设备推送 token。',
+      '相机、相册和通知权限只在对应功能触发时申请; 拒绝非必要权限后仍可使用文本提问。',
+      '账号数据可在“我的”页导出摘要, 也可通过二次确认注销账号并删除关联学习数据。',
+      '题目图片、AI 日志、验证码、会话和通知记录按服务端配置的保存期限清理。',
+    ],
+  },
+  minor: {
+    title: '未成年人使用说明',
+    version: POLICY_VERSION,
+    items: [
+      '未成年人应在父母或其他监护人同意和指导下使用本产品。',
+      '不要输入身份证号、家庭住址、学校班级、联系方式、银行卡等敏感信息。',
+      '不要要求 AI 直接代写作业、考试作弊或绕过老师要求。',
+      'AI 可能讲错, 遇到不确定内容应询问老师、家长或查教材。',
+      '监护人应关注使用时长、错题复习、内容安全和付费异常。',
+    ],
+  },
+};
+
 function Button({ label, onPress, secondary = false }) {
   return h(
     TouchableOpacity,
@@ -262,6 +298,7 @@ export default function App() {
   const [feedbackContent, setFeedbackContent] = useState('');
   const [accountExportSummary, setAccountExportSummary] = useState(null);
   const [deleteConfirmArmed, setDeleteConfirmArmed] = useState(false);
+  const [selectedLegalDoc, setSelectedLegalDoc] = useState(null);
 
   const api = useMemo(
     () => createApiClient({ baseUrl: apiBase, sessionToken, onSessionToken: setSessionToken }),
@@ -338,6 +375,11 @@ export default function App() {
     setApiBase(preset.value);
     await saveApiBase(preset.value);
     setStatus(`已选择 ${preset.label}: ${preset.hint}`);
+  }
+
+  function openLegalDoc(key) {
+    setSelectedLegalDoc(key);
+    setStatus(`正在查看${LEGAL_DOCS[key].title}`);
   }
 
   async function login() {
@@ -818,6 +860,31 @@ export default function App() {
     setStatus('已退出当前账号');
   }
 
+  function renderLegalLinks() {
+    return h(View, { style: styles.legalLinks }, [
+      h(Button, { key: 'terms', label: '用户协议', onPress: () => openLegalDoc('terms'), secondary: true }),
+      h(Button, { key: 'privacy', label: '隐私政策', onPress: () => openLegalDoc('privacy'), secondary: true }),
+      h(Button, { key: 'minor', label: '未成年人说明', onPress: () => openLegalDoc('minor'), secondary: true }),
+    ]);
+  }
+
+  function renderLegalDoc() {
+    const doc = LEGAL_DOCS[selectedLegalDoc] || LEGAL_DOCS.terms;
+    return h(
+      View,
+      { style: styles.card },
+      h(Text, { style: styles.title }, doc.title),
+      h(Text, { style: styles.subtitle }, `内测版本 ${doc.version}, 上线前需经法务审核确认。`),
+      doc.items.map((item, index) => h(
+        View,
+        { key: `${doc.title}-${index}`, style: styles.legalItem },
+        h(Text, { style: styles.actionIndex }, String(index + 1)),
+        h(Text, { style: styles.actionText }, item),
+      )),
+      h(Button, { label: '返回', onPress: () => setSelectedLegalDoc(null), secondary: true }),
+    );
+  }
+
   function renderLogin() {
     return h(
       View,
@@ -842,6 +909,7 @@ export default function App() {
           h(Text, { style: styles.bodyText }, `同意用户协议、隐私政策和未成年人使用说明, 版本 ${POLICY_VERSION}。AI 仅作学习辅助, 不替代教师、教材或官方答案。`),
         ),
       ]),
+      renderLegalLinks(),
       h(Button, { label: '发送验证码', onPress: requestOtp, secondary: true }),
       h(Field, { label: '验证码', value: otpCode, onChangeText: setOtpCode, placeholder: '6 位验证码' }),
       h(Button, { label: '登录', onPress: login }),
@@ -1253,6 +1321,11 @@ export default function App() {
           accountExportSummary.exportedAt ? h(Text, { style: styles.listMeta }, `导出时间 ${new Date(accountExportSummary.exportedAt).toLocaleString()}`) : null,
         ) : null,
       ),
+      h(View, { style: styles.reportSection },
+        h(Text, { style: styles.sectionLabel }, '协议与隐私'),
+        h(Text, { style: styles.bodyText }, '可随时查看内测版用户协议、隐私政策和未成年人使用说明。'),
+        renderLegalLinks(),
+      ),
       h(View, { style: styles.actionRow }, [
         h(Button, { key: 'report', label: '看周报', onPress: () => setTab('report'), secondary: true }),
         h(Button, { key: 'plus', label: '管理 Plus', onPress: () => setTab('plus'), secondary: true }),
@@ -1262,7 +1335,9 @@ export default function App() {
   }
 
   const loggedIn = sessionToken || demoMode;
-  const content = loggedIn
+  const content = selectedLegalDoc
+    ? renderLegalDoc()
+    : loggedIn
     ? {
         home: renderHome,
         ask: renderAsk,
@@ -1408,6 +1483,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#111827',
     fontWeight: '700',
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  legalItem: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingVertical: 8,
   },
   segmentRow: {
     flexDirection: 'row',
