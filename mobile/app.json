@@ -16,14 +16,20 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.example.aitutor",
+      "bundleIdentifier": "com.zgc1207.aitutor",
       "infoPlist": {
         "NSCameraUsageDescription": "用于拍摄题目图片并识别题干。",
-        "NSPhotoLibraryUsageDescription": "用于选择题目图片并识别题干。"
+        "NSPhotoLibraryUsageDescription": "用于选择题目图片并识别题干。",
+        "NSUserNotificationsUsageDescription": "用于发送错题复习提醒。"
       }
     },
     "android": {
-      "package": "com.example.aitutor"
+      "package": "com.zgc1207.aitutor",
+      "permissions": [
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "POST_NOTIFICATIONS"
+      ]
     },
     "extra": {
       "defaultApiBaseUrl": ""

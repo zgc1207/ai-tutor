@@ -44,14 +44,33 @@ checks.push(!missingDependencies.length
   : fail('mobile.dependencies', { dependencies: pkg.dependencies || {} }));
 
 const appConfig = readJson('app.json').expo;
-checks.push(appConfig?.name && appConfig?.slug && appConfig?.ios?.bundleIdentifier && appConfig?.android?.package
+const iosBundleIdentifier = appConfig?.ios?.bundleIdentifier || '';
+const androidPackage = appConfig?.android?.package || '';
+const appIdPattern = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){2,}$/;
+const requiredAndroidPermissions = ['CAMERA', 'POST_NOTIFICATIONS'];
+const missingAndroidPermissions = requiredAndroidPermissions.filter(permission => !appConfig?.android?.permissions?.includes(permission));
+checks.push(appConfig?.name
+  && appConfig?.slug
+  && appIdPattern.test(iosBundleIdentifier)
+  && appIdPattern.test(androidPackage)
+  && !iosBundleIdentifier.includes('example')
+  && !androidPackage.includes('example')
+  && appConfig?.ios?.infoPlist?.NSCameraUsageDescription
+  && appConfig?.ios?.infoPlist?.NSPhotoLibraryUsageDescription
+  && appConfig?.ios?.infoPlist?.NSUserNotificationsUsageDescription
+  && missingAndroidPermissions.length === 0
   ? pass('mobile.appConfig', {
       appName: appConfig.name,
       slug: appConfig.slug,
-      iosBundleIdentifier: appConfig.ios.bundleIdentifier,
-      androidPackage: appConfig.android.package,
+      iosBundleIdentifier,
+      androidPackage,
+      androidPermissions: appConfig.android.permissions,
     })
-  : fail('mobile.appConfig', { appConfig }));
+  : fail('mobile.appConfig', {
+      appConfig,
+      missingAndroidPermissions,
+      message: 'App config must use production-style package identifiers and explicit permission descriptions.',
+    }));
 
 const jsFiles = [
   'App.js',
