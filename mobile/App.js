@@ -57,6 +57,7 @@ const DEMO_MISTAKES = [
 
 const DEMO_REPORT = {
   headline: '本周学习稳定, 需要重点复习方程移项和英语时态。',
+  summaryText: '本周孩子能坚持完成提问和复习, 但错题集中在“步骤规则”而不是概念完全不会。',
   sourceReport: {
     summary: {
       questionCount: 12,
@@ -69,6 +70,7 @@ const DEMO_REPORT = {
       knowledgePoint: '一元一次方程',
       errorReason: '错因集中在移项和合并同类项。',
     },
+    encouragement: '建议家长重点看孩子是否能说清每一步理由, 不需要追求一次做很多题。',
   },
   actionItems: [
     '每天完成 3 道同类方程变式题。',
@@ -761,6 +763,7 @@ export default function App() {
 
   function renderReport() {
     const summary = report?.sourceReport?.summary || {};
+    const reviewRate = Math.round((summary.reviewCompletionRate || 0) * 100);
     return h(
       View,
       { style: styles.card },
@@ -770,19 +773,40 @@ export default function App() {
       report && h(View, { style: styles.metrics }, [
         h(Metric, { key: 'questions', label: '提问', value: summary.questionCount || 0 }),
         h(Metric, { key: 'mistakes', label: '错题', value: summary.newMistakeCount || 0 }),
-        h(Metric, { key: 'reviews', label: '复习率', value: `${Math.round((summary.reviewCompletionRate || 0) * 100)}%` }),
+        h(Metric, { key: 'reviews', label: '复习率', value: `${reviewRate}%` }),
       ]),
+      report && h(
+        View,
+        { style: styles.reportSection },
+        h(Text, { style: styles.sectionLabel }, '本周结论'),
+        h(Text, { style: styles.reportHeadline }, report.summaryText || report.headline || '本周学习记录已生成'),
+        h(Text, { style: styles.bodyText }, reviewRate >= 80
+          ? '复习完成率较好, 可以继续保持当前节奏。'
+          : '复习完成率偏低, 建议先减少新题, 把今日复习补齐。'),
+      ),
       report?.parentSummary?.topWeakPoint && h(
         View,
-        { style: styles.highlight },
+        { style: styles.reportSection },
+        h(Text, { style: styles.sectionLabel }, '主要薄弱点'),
         h(Text, { style: styles.listTitle }, report.parentSummary.topWeakPoint.knowledgePoint),
         h(Text, { style: styles.bodyText }, report.parentSummary.topWeakPoint.errorReason || '需要继续观察错因'),
+        report.parentSummary.encouragement ? h(Text, { style: styles.bodyText }, report.parentSummary.encouragement) : null,
       ),
-      report?.actionItems?.map((item, index) => h(
-        Text,
-        { key: `${index}-${item}`, style: styles.bodyText },
-        `${index + 1}. ${item}`,
-      )),
+      report?.actionItems?.length ? h(
+        View,
+        { style: styles.reportSection },
+        h(Text, { style: styles.sectionLabel }, '家长行动清单'),
+        report.actionItems.map((item, index) => h(
+          View,
+          { key: `${index}-${item}`, style: styles.actionItem },
+          h(Text, { style: styles.actionIndex }, String(index + 1)),
+          h(Text, { style: styles.actionText }, item),
+        )),
+      ) : null,
+      report ? h(View, { style: styles.actionRow }, [
+        h(Button, { key: 'mistakes', label: '看相关错题', onPress: () => setTab('mistakes'), secondary: true }),
+        h(Button, { key: 'review', label: '安排今日复习', onPress: () => setTab('review'), secondary: true }),
+      ]) : null,
     );
   }
 
@@ -988,6 +1012,49 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4b5563',
     lineHeight: 19,
+  },
+  reportSection: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  sectionLabel: {
+    marginBottom: 6,
+    fontSize: 12,
+    color: '#6b7280',
+    fontWeight: '700',
+  },
+  reportHeadline: {
+    fontSize: 15,
+    color: '#111827',
+    fontWeight: '700',
+    lineHeight: 22,
+  },
+  actionItem: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingVertical: 8,
+  },
+  actionIndex: {
+    width: 22,
+    height: 22,
+    overflow: 'hidden',
+    borderRadius: 11,
+    backgroundColor: '#eef2ff',
+    color: '#4f46e5',
+    textAlign: 'center',
+    lineHeight: 22,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  actionText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#374151',
+    lineHeight: 20,
   },
   statusPill: {
     overflow: 'hidden',
