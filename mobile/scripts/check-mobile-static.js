@@ -105,6 +105,15 @@ checks.push(!missingApiCalls.length
   ? pass('mobile.apiContract', { calls: requiredApiCalls.length, auth: 'bearer-session' })
   : fail('mobile.apiContract', { missingApiCalls }));
 
+checks.push(appSource.includes('enterDemoMode')
+  && appSource.includes('DEMO_DASHBOARD')
+  && appSource.includes('体验演示')
+  && appSource.includes('演示模式')
+  ? pass('mobile.demoExperience', { entry: '体验演示' })
+  : fail('mobile.demoExperience', {
+      message: 'The mobile app should keep a visible demo entry for product review without backend setup.'
+    }));
+
 const counts = checks.reduce((acc, check) => {
   acc[check.status] = (acc[check.status] || 0) + 1;
   return acc;

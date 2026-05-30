@@ -16,6 +16,72 @@ import { clearSessionState, loadSessionState, saveApiBase, saveSessionToken } fr
 
 const h = React.createElement;
 
+const DEMO_DASHBOARD = {
+  today: {
+    questions: 3,
+    mistakes: 1,
+    reviews: 4,
+  },
+};
+
+const DEMO_REVIEW_TASKS = [
+  { id: 'demo-review-1', knowledgePoint: '一元一次方程', cycleLabel: 'D1 今日复习' },
+  { id: 'demo-review-2', knowledgePoint: '一般过去时', cycleLabel: 'D3 巩固复习' },
+  { id: 'demo-review-3', knowledgePoint: '压强公式', cycleLabel: 'D7 间隔复习' },
+];
+
+const DEMO_MISTAKES = [
+  {
+    id: 'demo-mistake-1',
+    knowledgePoint: '一元一次方程',
+    status: 'reviewing',
+    subject: { name: '数学' },
+    errorReason: '移项后没有同步改变符号, 导致未知数系数计算错误。',
+  },
+];
+
+const DEMO_REPORT = {
+  headline: '本周学习稳定, 需要重点复习方程移项和英语时态。',
+  sourceReport: {
+    summary: {
+      questionCount: 12,
+      newMistakeCount: 3,
+      reviewCompletionRate: 0.82,
+    },
+  },
+  parentSummary: {
+    topWeakPoint: {
+      knowledgePoint: '一元一次方程',
+      errorReason: '错因集中在移项和合并同类项。',
+    },
+  },
+  actionItems: [
+    '每天完成 3 道同类方程变式题。',
+    '复习时先口头说明每一步为什么变号。',
+    '周末回看错题本中同一知识点的记录。',
+  ],
+};
+
+const DEMO_KNOWLEDGE_TREE = [
+  {
+    code: 'math',
+    name: '数学',
+    children: [
+      { id: 'math-1', name: '一元一次方程', status: 'red', mistakes: 2, children: [] },
+      { id: 'math-2', name: '函数基础', status: 'yellow', mistakes: 1, children: [] },
+      { id: 'math-3', name: '勾股定理', status: 'green', mistakes: 0, children: [] },
+    ],
+  },
+  {
+    code: 'english',
+    name: '英语',
+    children: [
+      { id: 'english-1', name: '一般过去时', status: 'yellow', mistakes: 1, children: [] },
+      { id: 'english-2', name: '宾语从句', status: 'gray', mistakes: 0, children: [] },
+    ],
+  },
+];
+
 function Button({ label, onPress, secondary = false }) {
   return h(
     TouchableOpacity,
@@ -58,6 +124,7 @@ export default function App() {
   const [inviteCode, setInviteCode] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [status, setStatus] = useState('配置后端 API 后开始内测登录');
+  const [demoMode, setDemoMode] = useState(false);
   const [tab, setTab] = useState('home');
   const [dashboard, setDashboard] = useState(null);
   const [reviewTasks, setReviewTasks] = useState([]);
@@ -109,6 +176,25 @@ export default function App() {
     await run('发送验证码', () => api.requestOtp({ phone, inviteCode }));
   }
 
+  function enterDemoMode() {
+    setDemoMode(true);
+    setSessionToken('');
+    setDashboard(DEMO_DASHBOARD);
+    setReviewTasks(DEMO_REVIEW_TASKS);
+    setMistakes(DEMO_MISTAKES);
+    setReport(DEMO_REPORT);
+    setKnowledgeTree(DEMO_KNOWLEDGE_TREE);
+    setPlans([{
+      code: 'plus',
+      name: 'Plus',
+      priceCentsMonthly: 2900,
+      limits: { dailyQuestions: 200, dailyAiSteps: 600 },
+    }]);
+    setBillingStatus({ activeSubscription: null, recentOrders: [] });
+    setTab('home');
+    setStatus('已进入体验演示: 不需要后端, 可先查看核心学习闭环');
+  }
+
   async function login() {
     await saveApiBase(apiBase);
     const result = await run('登录', () => api.loginWithOtp({ phone, code: otpCode, inviteCode }));
@@ -117,26 +203,57 @@ export default function App() {
   }
 
   async function loadHome() {
+    if (demoMode) {
+      setDashboard(DEMO_DASHBOARD);
+      setStatus('演示首页已刷新');
+      return;
+    }
     const data = await run('刷新首页', () => api.getDashboard());
     if (data) setDashboard(data);
   }
 
   async function loadReview() {
+    if (demoMode) {
+      setReviewTasks(DEMO_REVIEW_TASKS);
+      setStatus('演示复习任务已加载');
+      return;
+    }
     const data = await run('加载复习', () => api.getReviewTasks());
     if (data) setReviewTasks(data.tasks || data || []);
   }
 
   async function loadMistakes() {
+    if (demoMode) {
+      setMistakes(DEMO_MISTAKES);
+      setStatus('演示错题本已刷新');
+      return;
+    }
     const data = await run('加载错题本', () => api.getMistakes());
     if (data) setMistakes(data || []);
   }
 
   async function loadReport() {
+    if (demoMode) {
+      setReport(DEMO_REPORT);
+      setStatus('演示周报已刷新');
+      return;
+    }
     const data = await run('加载学习报告', () => api.getParentWeeklyReport());
     if (data) setReport(data);
   }
 
   async function loadPlans() {
+    if (demoMode) {
+      setPlans([{
+        code: 'plus',
+        name: 'Plus',
+        priceCentsMonthly: 2900,
+        limits: { dailyQuestions: 200, dailyAiSteps: 600 },
+      }]);
+      setBillingStatus({ activeSubscription: null, recentOrders: [] });
+      setStatus('演示套餐已刷新');
+      return;
+    }
     const planData = await run('加载套餐', () => api.getPlans());
     const billingData = await run('加载订阅状态', () => api.getBillingStatus());
     if (planData?.plans) setPlans(planData.plans);
@@ -144,6 +261,11 @@ export default function App() {
   }
 
   async function loadKnowledgeTree() {
+    if (demoMode) {
+      setKnowledgeTree(DEMO_KNOWLEDGE_TREE);
+      setStatus('演示知识图谱已刷新');
+      return;
+    }
     const data = await run('加载知识图谱', () => api.getKnowledgeTree({ subject: 'all' }));
     if (data?.subjects) setKnowledgeTree(data.subjects);
   }
@@ -160,6 +282,27 @@ export default function App() {
   async function ask() {
     if (!questionText.trim()) {
       setStatus('请输入题目');
+      return;
+    }
+    if (demoMode) {
+      const demoQuestionId = `demo-question-${Date.now()}`;
+      setCurrentQuestionId(demoQuestionId);
+      setAnswerMessages([
+        {
+          id: `question-${demoQuestionId}`,
+          type: 'question',
+          title: '原题',
+          content: questionText,
+        },
+        {
+          id: `guide-${demoQuestionId}`,
+          type: 'guide',
+          title: '第 1 步提示',
+          content: '先圈出题目中的已知条件, 再判断它考的是哪个知识点。不要急着算最终答案。',
+        },
+      ]);
+      setAnswer('演示引导已生成');
+      setStatus('演示题目已提交: 可以继续点下一步提示或加入错题');
       return;
     }
     const question = await run('提交题目', () => api.createQuestion({ text: questionText }));
@@ -181,6 +324,18 @@ export default function App() {
       setStatus('请先提交一道题');
       return;
     }
+    if (demoMode) {
+      appendAnswerMessage({
+        messageId: `demo-guide-${Date.now()}`,
+        type: 'guide',
+        title: `第 ${answerMessages.length} 步提示`,
+        content: answerMessages.length % 2
+          ? '把未知数相关的项移到等号一边, 常数项移到另一边, 每次移项都检查符号。'
+          : '最后把系数化为 1, 再代回原式检查是否成立。',
+      });
+      setStatus('演示下一步提示已生成');
+      return;
+    }
     const next = await run('获取下一步引导', () => api.nextAnswer(currentQuestionId));
     if (next) appendAnswerMessage(next);
     setAnswer(next?.message?.content || next?.content || answer);
@@ -189,6 +344,27 @@ export default function App() {
   async function finishCurrentQuestion({ solvedIndependently = false } = {}) {
     if (!currentQuestionId) {
       setStatus('请先提交一道题');
+      return;
+    }
+    if (demoMode) {
+      if (solvedIndependently) {
+        setStatus('演示: 已标记为独立解决, 不加入错题');
+        return;
+      }
+      const newMistake = {
+        id: `demo-mistake-${Date.now()}`,
+        knowledgePoint: '演示知识点',
+        status: 'reviewing',
+        subject: { name: '数学' },
+        errorReason: '已加入错题本, 后续会按 D1/D3/D7/D15 安排复习。',
+      };
+      setMistakes(items => [newMistake].concat(items));
+      setReviewTasks(items => [{
+        id: `demo-review-${Date.now()}`,
+        knowledgePoint: newMistake.knowledgePoint,
+        cycleLabel: 'D1 今日复习',
+      }].concat(items));
+      setStatus('演示: 已加入错题本并生成今日复习任务');
       return;
     }
     const result = await run(
@@ -204,6 +380,15 @@ export default function App() {
   }
 
   async function askWithImage(source) {
+    if (demoMode) {
+      const demoText = source === 'camera'
+        ? '拍照识题演示: 解方程 3x - 5 = 10'
+        : '相册识题演示: The boy went to school yesterday.';
+      setQuestionText(demoText);
+      setImageStatus('演示模式已模拟图片识别结果');
+      setStatus('演示图片题已识别, 可以点击获取启发式引导');
+      return;
+    }
     const picker = source === 'camera' ? takeQuestionPhoto : chooseQuestionImage;
     setImageStatus(source === 'camera' ? '打开相机...' : '打开相册...');
     const picked = await run(source === 'camera' ? '获取照片' : '选择图片', picker);
@@ -244,6 +429,11 @@ export default function App() {
   }
 
   async function enableReviewPush() {
+    if (demoMode) {
+      setPushStatus('demo / expo');
+      setStatus('演示: 复习提醒已开启');
+      return;
+    }
     const result = await run('注册复习提醒', () => registerReviewPushToken({ api }));
     if (result?.device) {
       setPushStatus(`${result.device.provider} / ${result.device.platform}`);
@@ -251,6 +441,10 @@ export default function App() {
   }
 
   async function checkoutPlus() {
+    if (demoMode) {
+      setStatus('演示: 真实支付会在接入 IAP 或渠道支付后打开');
+      return;
+    }
     const result = await run('创建订阅订单', () => api.createCheckout({ planCode: 'plus' }));
     if (result?.checkoutUrl) {
       await Linking.openURL(result.checkoutUrl);
@@ -259,12 +453,17 @@ export default function App() {
   }
 
   async function cancelPlus() {
+    if (demoMode) {
+      setStatus('演示: 已模拟取消自动续订');
+      return;
+    }
     const result = await run('取消自动续订', () => api.cancelSubscription({ cancelAtPeriodEnd: true }));
     if (result?.subscription) setBillingStatus({ ...billingStatus, activeSubscription: result.subscription });
   }
 
   async function logout() {
     await clearSessionState();
+    setDemoMode(false);
     setSessionToken('');
     setDashboard(null);
     setReviewTasks([]);
@@ -290,6 +489,11 @@ export default function App() {
       h(Button, { label: '发送验证码', onPress: requestOtp, secondary: true }),
       h(Field, { label: '验证码', value: otpCode, onChangeText: setOtpCode, placeholder: '6 位验证码' }),
       h(Button, { label: '登录', onPress: login }),
+      h(View, { style: styles.demoPanel },
+        h(Text, { style: styles.listTitle }, '先看产品体验'),
+        h(Text, { style: styles.bodyText }, '不用配置后端, 直接进入演示数据, 查看首页、提问、错题、复习、报告和知识图谱。'),
+        h(Button, { label: '进入体验演示', onPress: enterDemoMode, secondary: true }),
+      ),
     );
   }
 
@@ -298,12 +502,17 @@ export default function App() {
       View,
       { style: styles.card },
       h(Text, { style: styles.title }, '今日学习'),
+      demoMode ? h(Text, { style: styles.demoBadge }, '体验演示') : null,
       h(View, { style: styles.metrics }, [
         h(Metric, { key: 'questions', label: '提问', value: dashboard?.today?.questions || dashboard?.questionCount || 0 }),
         h(Metric, { key: 'mistakes', label: '错题', value: dashboard?.today?.mistakes || dashboard?.mistakeCount || 0 }),
         h(Metric, { key: 'reviews', label: '复习', value: dashboard?.today?.reviews || dashboard?.reviewCount || 0 }),
       ]),
       h(Button, { label: '刷新学习概览', onPress: loadHome }),
+      h(View, { style: styles.highlight },
+        h(Text, { style: styles.listTitle }, '核心流程'),
+        h(Text, { style: styles.bodyText }, '提问获得启发式引导, 仍不会直接泄露答案; 做错后加入错题本, 自动生成间隔复习任务。'),
+      ),
     );
   }
 
@@ -312,6 +521,7 @@ export default function App() {
       View,
       { style: styles.card },
       h(Text, { style: styles.title }, '文字提问'),
+      demoMode ? h(Text, { style: styles.demoBadge }, '演示模式: 可输入任意题目测试流程') : null,
       h(Field, {
         label: '题目',
         value: questionText,
@@ -471,14 +681,15 @@ export default function App() {
       View,
       { style: styles.card },
       h(Text, { style: styles.title }, '我的'),
-      h(Text, { style: styles.subtitle }, sessionToken ? '已通过 session token 登录' : '未登录'),
+      h(Text, { style: styles.subtitle }, demoMode ? '当前为体验演示, 未连接真实账号' : (sessionToken ? '已通过 session token 登录' : '未登录')),
       h(Text, { style: styles.hint }, `复习提醒设备: ${pushStatus}`),
       h(Button, { label: '开启复习提醒', onPress: enableReviewPush }),
       h(Button, { label: '退出登录', onPress: logout, secondary: true }),
     );
   }
 
-  const content = sessionToken
+  const loggedIn = sessionToken || demoMode;
+  const content = loggedIn
     ? {
         home: renderHome,
         ask: renderAsk,
@@ -499,7 +710,7 @@ export default function App() {
       content,
       h(Text, { key: 'status', style: styles.status }, status),
     ]),
-    sessionToken && h(
+    loggedIn && h(
       View,
       { style: styles.tabs },
       ['home', 'ask', 'review', 'mistakes', 'report', 'knowledge', 'plus', 'me'].map(item => h(
@@ -524,6 +735,25 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: '#f7f7fb',
+  },
+  demoPanel: {
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+  },
+  demoBadge: {
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: '#ecfdf5',
+    color: '#047857',
+    fontSize: 12,
+    fontWeight: '700',
   },
   container: {
     padding: 16,

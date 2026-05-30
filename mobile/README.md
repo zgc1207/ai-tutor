@@ -6,6 +6,7 @@
 
 当前范围:
 
+- 登录页提供“体验演示”入口, 不需要后端和验证码即可查看首页、提问、错题、复习、报告和知识图谱核心体验。
 - 使用 `/auth/otp/request` 和 `/auth/otp/login` 做内测登录。
 - 所有业务请求只使用 bearer `sessionToken`, 不使用 `x-user-id`。
 - 使用 `expo-secure-store` 保存 API 地址和 session token。
@@ -36,6 +37,12 @@ npm run start:local
 ```
 
 `start:local` 会把 Expo 的 HOME 指到 `mobile/.expo-home`, 并使用 `--localhost` 启动 Metro。该目录已加入 `.gitignore`, 不会进入仓库。
+
+体验演示:
+
+1. 启动 Metro 后用 Expo Go 打开 App。
+2. 在登录页点击“进入体验演示”。
+3. 依次查看首页、提问、复习、错题、报告和知识图谱; 演示模式下拍照/相册会模拟 OCR 识别结果。
 
 后续迁移顺序:
 
