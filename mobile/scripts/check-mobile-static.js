@@ -74,6 +74,8 @@ checks.push(syntaxFailures.length
 const appSource = fs.readFileSync(path.join(ROOT, 'App.js'), 'utf8');
 const clientSource = fs.readFileSync(path.join(ROOT, 'src/api/client.js'), 'utf8');
 const requiredApiCalls = [
+  '/health',
+  '/ready',
   '/auth/otp/request',
   '/auth/otp/login',
   '/dashboard',
@@ -120,6 +122,9 @@ checks.push(appSource.includes('enterDemoMode')
   && appSource.includes('planCompare')
   && appSource.includes('免费版')
   && appSource.includes('管理 Plus')
+  && appSource.includes('检查后端状态')
+  && appSource.includes('今日额度')
+  && appSource.includes('内测诊断')
   && appSource.includes('仍不会')
   && appSource.includes('体验演示')
   && appSource.includes('演示模式')

@@ -99,6 +99,31 @@ const DEMO_KNOWLEDGE_TREE = [
   },
 ];
 
+const DEMO_ME = {
+  user: {
+    phone: '13800000000',
+    nickname: '体验学生',
+    role: 'student',
+  },
+  profile: {
+    grade: '初中',
+    gradeStage: 'junior',
+    targetSubjects: ['math', 'english', 'physics'],
+  },
+  accountModel: 'single-student',
+  plan: {
+    code: 'free',
+    dailyQuestions: 50,
+    dailyAiSteps: 150,
+  },
+  quota: {
+    questionCount: 3,
+    aiStepCount: 8,
+    questionLimit: 50,
+    aiStepLimit: 150,
+  },
+};
+
 const DEMO_SAMPLE_QUESTIONS = [
   {
     label: '数学方程',
@@ -190,6 +215,8 @@ export default function App() {
   const [billingStatus, setBillingStatus] = useState(null);
   const [knowledgeTree, setKnowledgeTree] = useState([]);
   const [demoPlusActive, setDemoPlusActive] = useState(false);
+  const [meInfo, setMeInfo] = useState(null);
+  const [runtimeCheck, setRuntimeCheck] = useState(null);
 
   const api = useMemo(
     () => createApiClient({ baseUrl: apiBase, sessionToken, onSessionToken: setSessionToken }),
@@ -242,6 +269,12 @@ export default function App() {
       limits: { dailyQuestions: 200, dailyAiSteps: 600 },
     }]);
     setBillingStatus({ activeSubscription: null, recentOrders: [] });
+    setMeInfo(DEMO_ME);
+    setRuntimeCheck({
+      health: 'ok',
+      ready: 'demo',
+      detail: '体验演示不连接真实后端',
+    });
     setTab('home');
     setStatus('已进入体验演示: 不需要后端, 可先查看核心学习闭环');
   }
@@ -565,6 +598,44 @@ export default function App() {
     }
   }
 
+  async function loadMeInfo() {
+    if (demoMode) {
+      setMeInfo(DEMO_ME);
+      setStatus('演示账号信息已刷新');
+      return;
+    }
+    const data = await run('刷新账号信息', () => api.getMe());
+    if (data) setMeInfo(data);
+  }
+
+  async function checkApiRuntime() {
+    if (demoMode) {
+      setRuntimeCheck({
+        health: 'ok',
+        ready: 'demo',
+        detail: '体验演示不连接真实后端',
+      });
+      setStatus('演示后端状态已检查');
+      return;
+    }
+
+    setRuntimeCheck({ health: 'checking', ready: 'checking', detail: '正在检查后端 /health 和 /ready' });
+    const health = await run('检查后端健康', () => api.getHealth());
+    if (!health) {
+      setRuntimeCheck({ health: 'failed', ready: 'skipped', detail: '无法访问 /health, 请检查 API 地址和网络' });
+      return;
+    }
+
+    const ready = await run('检查后端就绪', () => api.getReady());
+    setRuntimeCheck({
+      health: health.ok ? 'ok' : 'failed',
+      ready: ready?.ok ? 'ok' : 'failed',
+      detail: ready?.ok
+        ? '后端和数据库已就绪'
+        : '后端可访问, 但 /ready 未通过, 请检查数据库或环境变量',
+    });
+  }
+
   async function checkoutPlus() {
     if (demoMode) {
       setDemoPlusActive(true);
@@ -609,6 +680,8 @@ export default function App() {
     setReport(null);
     setBillingStatus(null);
     setDemoPlusActive(false);
+    setMeInfo(null);
+    setRuntimeCheck(null);
     setKnowledgeTree([]);
     setStatus('已退出当前账号');
   }
@@ -929,6 +1002,17 @@ export default function App() {
 
   function renderMe() {
     const accountMode = demoMode ? '体验演示账号' : '正式登录账号';
+    const quota = meInfo?.quota || {};
+    const questionCount = quota.questionCount ?? quota.questionsUsedToday ?? 0;
+    const questionLimit = quota.questionLimit ?? quota.dailyQuestions ?? '--';
+    const aiStepCount = quota.aiStepCount ?? quota.aiStepsUsedToday ?? 0;
+    const aiStepLimit = quota.aiStepLimit ?? quota.dailyAiSteps ?? '--';
+    const profile = meInfo?.profile || {};
+    const runtimeTone = runtimeCheck?.ready === 'ok' || runtimeCheck?.ready === 'demo'
+      ? 'success'
+      : runtimeCheck?.ready === 'failed'
+        ? 'danger'
+        : 'neutral';
     return h(
       View,
       { style: styles.card },
@@ -936,8 +1020,40 @@ export default function App() {
       h(Text, { style: styles.subtitle }, demoMode ? '当前为体验演示, 未连接真实账号' : (sessionToken ? '已通过 session token 登录' : '未登录')),
       h(View, { style: styles.reportSection },
         h(Text, { style: styles.sectionLabel }, '账号状态'),
-        h(Text, { style: styles.listTitle }, accountMode),
+        h(View, { style: styles.listHeader }, [
+          h(Text, { key: 'mode', style: styles.listTitle }, accountMode),
+          h(StatusPill, { key: 'model', label: meInfo?.accountModel === 'single-student' ? '单学生' : '待刷新', tone: 'neutral' }),
+        ]),
+        h(Text, { style: styles.bodyText }, meInfo?.user?.phone ? `手机号: ${meInfo.user.phone}` : '手机号: 未加载'),
+        h(Text, { style: styles.bodyText }, profile.grade ? `年级: ${profile.grade}` : '年级: 未加载'),
         h(Text, { style: styles.bodyText }, '一个登录账号只对应一个学生档案, 不提供多学生切换。'),
+      ),
+      h(View, { style: styles.reportSection },
+        h(Text, { style: styles.sectionLabel }, '今日额度'),
+        h(View, { style: styles.metrics }, [
+          h(Metric, {
+            key: 'questions',
+            label: '提问',
+            value: `${questionCount}/${questionLimit}`,
+          }),
+          h(Metric, {
+            key: 'steps',
+            label: 'AI 引导',
+            value: `${aiStepCount}/${aiStepLimit}`,
+          }),
+        ]),
+      ),
+      h(View, { style: styles.actionRow }, [
+        h(Button, { key: 'refreshMe', label: '刷新账号信息', onPress: loadMeInfo, secondary: true }),
+        h(Button, { key: 'checkRuntime', label: '检查后端状态', onPress: checkApiRuntime, secondary: true }),
+      ]),
+      h(View, { style: styles.reportSection },
+        h(View, { style: styles.listHeader }, [
+          h(Text, { key: 'title', style: styles.sectionLabel }, '内测诊断'),
+          runtimeCheck ? h(StatusPill, { key: 'status', label: runtimeCheck.ready, tone: runtimeTone }) : null,
+        ]),
+        h(Text, { style: styles.bodyText }, `API: ${demoMode ? 'demo://local' : (apiBase || '未配置')}`),
+        h(Text, { style: styles.bodyText }, runtimeCheck?.detail || '点击“检查后端状态”确认 API、服务和数据库是否可用。'),
       ),
       h(View, { style: styles.reportSection },
         h(Text, { style: styles.sectionLabel }, '复习提醒'),

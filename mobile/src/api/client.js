@@ -60,6 +60,14 @@ export function createApiClient({ baseUrl, sessionToken, onSessionToken }) {
       return request('/me');
     },
 
+    getHealth() {
+      return request('/health');
+    },
+
+    getReady() {
+      return request('/ready');
+    },
+
     getDashboard() {
       return request('/dashboard');
     },
