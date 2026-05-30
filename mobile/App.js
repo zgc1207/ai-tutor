@@ -157,6 +157,14 @@ function QuickCard({ title, body, action, onPress }) {
   );
 }
 
+function StatusPill({ label, tone = 'neutral' }) {
+  return h(
+    Text,
+    { style: [styles.statusPill, styles[`statusPill_${tone}`]] },
+    label,
+  );
+}
+
 export default function App() {
   const [apiBase, setApiBase] = useState('');
   const [sessionToken, setSessionToken] = useState('');
@@ -363,6 +371,17 @@ export default function App() {
       api.answerReviewTask(task.id, { correct })
     ));
     if (result) await loadReview();
+  }
+
+  function openReviewForMistake(record) {
+    const knowledgePoint = record.knowledgePoint || record.knowledgeNode?.name || '错题知识点';
+    const matchedTask = reviewTasks.find(task => (
+      (task.errorRecord?.knowledgePoint || task.knowledgePoint) === knowledgePoint
+    ));
+    setTab('review');
+    setStatus(matchedTask
+      ? `已定位 ${knowledgePoint} 的复习任务`
+      : `${knowledgePoint} 暂无今日复习任务`);
   }
 
   function appendAnswerMessage(step) {
@@ -698,20 +717,44 @@ export default function App() {
   }
 
   function renderMistakes() {
+    const statusLabel = {
+      reviewing: '复习中',
+      mastered: '已掌握',
+      open: '待处理',
+    };
     return h(
       View,
       { style: styles.card },
       h(Text, { style: styles.title }, '错题本'),
-      h(Text, { style: styles.subtitle }, '只展示当前登录账号对应学生的错题'),
+      h(Text, { style: styles.subtitle }, '只展示当前登录账号对应学生的错题, 可从错题直接进入复习。'),
       h(Button, { label: '刷新错题', onPress: loadMistakes, secondary: true }),
       mistakes.length
-        ? mistakes.slice(0, 20).map(record => h(
-            View,
-            { key: record.id, style: styles.listItem },
-            h(Text, { style: styles.listTitle }, record.knowledgePoint || record.knowledgeNode?.name || '错题知识点'),
-            h(Text, { style: styles.listMeta }, `${record.subject?.name || '--'} · ${record.status || '--'}`),
-            h(Text, { style: styles.bodyText }, record.errorReason || record.question?.originalText || '暂无错因记录'),
-          ))
+        ? mistakes.slice(0, 20).map(record => {
+            const knowledgePoint = record.knowledgePoint || record.knowledgeNode?.name || '错题知识点';
+            const hasReviewTask = reviewTasks.some(task => (
+              (task.errorRecord?.knowledgePoint || task.knowledgePoint) === knowledgePoint
+            ));
+            const mastered = record.status === 'mastered';
+            return h(
+              View,
+              { key: record.id, style: styles.listItem },
+              h(View, { style: styles.listHeader }, [
+                h(Text, { key: 'title', style: styles.listTitle }, knowledgePoint),
+                h(StatusPill, {
+                  key: 'status',
+                  label: statusLabel[record.status] || record.status || '待复习',
+                  tone: mastered ? 'success' : 'warning',
+                }),
+              ]),
+              h(Text, { style: styles.listMeta }, `${record.subject?.name || '--'} · ${hasReviewTask ? '今日有复习任务' : '等待复习计划'}`),
+              h(Text, { style: styles.bodyText }, record.errorReason || record.question?.originalText || '暂无错因记录'),
+              h(Button, {
+                label: hasReviewTask ? '去复习这类题' : '查看复习页',
+                onPress: () => openReviewForMistake(record),
+                secondary: true,
+              }),
+            );
+          })
         : h(Text, { style: styles.empty }, '暂无错题'),
     );
   }
@@ -946,6 +989,26 @@ const styles = StyleSheet.create({
     color: '#4b5563',
     lineHeight: 19,
   },
+  statusPill: {
+    overflow: 'hidden',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  statusPill_warning: {
+    color: '#92400e',
+    backgroundColor: '#fef3c7',
+  },
+  statusPill_success: {
+    color: '#047857',
+    backgroundColor: '#d1fae5',
+  },
+  statusPill_neutral: {
+    color: '#374151',
+    backgroundColor: '#f3f4f6',
+  },
   container: {
     padding: 16,
     paddingBottom: 96,
@@ -1096,6 +1159,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
+  },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   listTitle: {
     fontSize: 15,
