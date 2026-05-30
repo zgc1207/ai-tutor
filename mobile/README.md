@@ -29,6 +29,14 @@ npm install
 npm run start
 ```
 
+如果本地环境限制 Expo 写入用户目录, 使用项目内缓存启动:
+
+```bash
+npm run start:local
+```
+
+`start:local` 会把 Expo 的 HOME 指到 `mobile/.expo-home`, 并使用 `--localhost` 启动 Metro。该目录已加入 `.gitignore`, 不会进入仓库。
+
 后续迁移顺序:
 
 1. 替换示例包名、图标、启动屏和应用商店素材。

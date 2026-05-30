@@ -10,6 +10,7 @@ const REQUIRED_FILES = [
   'src/api/client.js',
   'src/device/native-features.js',
   'src/storage/session-store.js',
+  'scripts/start-expo-local.js',
   'README.md',
 ];
 
@@ -57,6 +58,7 @@ const jsFiles = [
   'src/device/native-features.js',
   'src/storage/session-store.js',
   'scripts/check-mobile-static.js',
+  'scripts/start-expo-local.js',
 ];
 const syntaxFailures = jsFiles
   .map(file => ({
