@@ -99,6 +99,8 @@ const requiredApiCalls = [
   '/ready',
   '/auth/otp/request',
   '/auth/otp/login',
+  '/account/export',
+  '/account',
   '/dashboard',
   '/questions',
   '/review-tasks/today',
@@ -130,6 +132,8 @@ checks.push(!missingApiCalls.length
   && appSource.includes('POLICY_VERSION')
   && appSource.includes('submitFeedback')
   && appSource.includes('FEEDBACK_CATEGORIES')
+  && appSource.includes('exportAccountData')
+  && appSource.includes('requestAccountDeletion')
   && clientSource.includes('consentAccepted = false')
   && clientSource.includes("gradeStage: 'junior'")
   && !clientSource.includes('consentAccepted: true')
@@ -161,6 +165,8 @@ checks.push(appSource.includes('enterDemoMode')
   && appSource.includes('AI 仅作学习辅助')
   && appSource.includes('内测反馈')
   && appSource.includes('内容安全')
+  && appSource.includes('账号与数据')
+  && appSource.includes('确认注销账号')
   && appSource.includes('仍不会')
   && appSource.includes('体验演示')
   && appSource.includes('演示模式')

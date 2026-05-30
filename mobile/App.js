@@ -260,6 +260,8 @@ export default function App() {
   const [feedbackCategory, setFeedbackCategory] = useState('bug');
   const [feedbackRating, setFeedbackRating] = useState(5);
   const [feedbackContent, setFeedbackContent] = useState('');
+  const [accountExportSummary, setAccountExportSummary] = useState(null);
+  const [deleteConfirmArmed, setDeleteConfirmArmed] = useState(false);
 
   const api = useMemo(
     () => createApiClient({ baseUrl: apiBase, sessionToken, onSessionToken: setSessionToken }),
@@ -722,6 +724,48 @@ export default function App() {
     }
   }
 
+  async function exportAccountData() {
+    if (demoMode) {
+      setAccountExportSummary({
+        questions: DEMO_DASHBOARD.today.questions,
+        mistakes: DEMO_MISTAKES.length,
+        feedback: feedbackContent.trim() ? 1 : 0,
+      });
+      setStatus('演示: 已生成账号数据导出摘要');
+      return;
+    }
+    const data = await run('导出账号数据', () => api.exportAccount());
+    if (!data?.account) return;
+    setAccountExportSummary({
+      questions: data.account.questions?.length || 0,
+      mistakes: data.account.errorRecords?.length || 0,
+      feedback: data.account.feedback?.length || 0,
+      exportedAt: data.exportedAt,
+    });
+  }
+
+  async function requestAccountDeletion() {
+    if (!deleteConfirmArmed) {
+      setDeleteConfirmArmed(true);
+      setStatus('再次点击“确认注销账号”会删除当前账号及学习数据');
+      return;
+    }
+
+    if (demoMode) {
+      setDeleteConfirmArmed(false);
+      await logout();
+      setStatus('演示: 已模拟注销账号并清空本地体验状态');
+      return;
+    }
+
+    const result = await run('注销账号', () => api.deleteAccount());
+    if (result?.deleted) {
+      setDeleteConfirmArmed(false);
+      await logout();
+      setStatus('账号已注销, 当前设备登录态已清除');
+    }
+  }
+
   async function checkoutPlus() {
     if (demoMode) {
       setDemoPlusActive(true);
@@ -768,6 +812,8 @@ export default function App() {
     setDemoPlusActive(false);
     setMeInfo(null);
     setRuntimeCheck(null);
+    setAccountExportSummary(null);
+    setDeleteConfirmArmed(false);
     setKnowledgeTree([]);
     setStatus('已退出当前账号');
   }
@@ -1188,6 +1234,25 @@ export default function App() {
         }),
         h(Button, { label: '提交反馈', onPress: submitFeedback, secondary: true }),
       ),
+      h(View, { style: styles.reportSection },
+        h(Text, { style: styles.sectionLabel }, '账号与数据'),
+        h(Text, { style: styles.bodyText }, '可导出当前单学生账号数据摘要; 注销会删除账号、题目、错题、复习、反馈和设备记录。'),
+        h(View, { style: styles.actionRow }, [
+          h(Button, { key: 'export', label: '导出数据摘要', onPress: exportAccountData, secondary: true }),
+          h(Button, {
+            key: 'delete',
+            label: deleteConfirmArmed ? '确认注销账号' : '申请注销账号',
+            onPress: requestAccountDeletion,
+            secondary: true,
+          }),
+        ]),
+        accountExportSummary ? h(
+          View,
+          { style: styles.exportSummary },
+          h(Text, { style: styles.bodyText }, `题目 ${accountExportSummary.questions || 0} · 错题 ${accountExportSummary.mistakes || 0} · 反馈 ${accountExportSummary.feedback || 0}`),
+          accountExportSummary.exportedAt ? h(Text, { style: styles.listMeta }, `导出时间 ${new Date(accountExportSummary.exportedAt).toLocaleString()}`) : null,
+        ) : null,
+      ),
       h(View, { style: styles.actionRow }, [
         h(Button, { key: 'report', label: '看周报', onPress: () => setTab('report'), secondary: true }),
         h(Button, { key: 'plus', label: '管理 Plus', onPress: () => setTab('plus'), secondary: true }),
@@ -1397,6 +1462,14 @@ const styles = StyleSheet.create({
   ratingTextActive: {
     color: '#ffffff',
   },
+  exportSummary: {
+    marginTop: 4,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
   apiPresetRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1527,6 +1600,7 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   label: {

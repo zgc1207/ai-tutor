@@ -68,6 +68,14 @@ export function createApiClient({ baseUrl, sessionToken, onSessionToken }) {
       return request('/me');
     },
 
+    exportAccount() {
+      return request('/account/export');
+    },
+
+    deleteAccount() {
+      return request('/account', { method: 'DELETE' });
+    },
+
     getHealth() {
       return request('/health');
     },
