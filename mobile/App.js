@@ -154,6 +154,14 @@ const API_PRESETS = [
   },
 ];
 
+const FEEDBACK_CATEGORIES = [
+  { label: '问题反馈', value: 'bug' },
+  { label: 'AI 质量', value: 'ai_quality' },
+  { label: '体验建议', value: 'ux' },
+  { label: '内容安全', value: 'content' },
+  { label: '其他', value: 'other' },
+];
+
 function Button({ label, onPress, secondary = false }) {
   return h(
     TouchableOpacity,
@@ -215,6 +223,14 @@ function ApiPresetButton({ preset, onSelect }) {
   );
 }
 
+function SegmentedOption({ label, selected, onPress }) {
+  return h(
+    TouchableOpacity,
+    { style: [styles.segmentOption, selected && styles.segmentOptionActive], onPress },
+    h(Text, { style: [styles.segmentOptionText, selected && styles.segmentOptionTextActive] }, label),
+  );
+}
+
 export default function App() {
   const [apiBase, setApiBase] = useState('');
   const [sessionToken, setSessionToken] = useState('');
@@ -241,6 +257,9 @@ export default function App() {
   const [demoPlusActive, setDemoPlusActive] = useState(false);
   const [meInfo, setMeInfo] = useState(null);
   const [runtimeCheck, setRuntimeCheck] = useState(null);
+  const [feedbackCategory, setFeedbackCategory] = useState('bug');
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackContent, setFeedbackContent] = useState('');
 
   const api = useMemo(
     () => createApiClient({ baseUrl: apiBase, sessionToken, onSessionToken: setSessionToken }),
@@ -678,6 +697,29 @@ export default function App() {
         ? '后端和数据库已就绪'
         : '后端可访问, 但 /ready 未通过, 请检查数据库或环境变量',
     });
+  }
+
+  async function submitFeedback() {
+    const content = feedbackContent.trim();
+    if (content.length < 2) {
+      setStatus('请先填写至少 2 个字的反馈内容');
+      return;
+    }
+    if (demoMode) {
+      setFeedbackContent('');
+      setStatus('演示: 反馈已记录, 真实版本会提交到运营后台');
+      return;
+    }
+    const result = await run('提交反馈', () => api.submitFeedback({
+      rating: feedbackRating,
+      category: feedbackCategory,
+      content,
+      page: tab,
+    }));
+    if (result?.id) {
+      setFeedbackContent('');
+      setStatus('反馈已提交, 内测问题会进入运营后台跟进');
+    }
   }
 
   async function checkoutPlus() {
@@ -1120,6 +1162,32 @@ export default function App() {
         h(Text, { style: styles.bodyText }, `设备: ${pushStatus}`),
       ),
       h(Button, { label: '开启复习提醒', onPress: enableReviewPush }),
+      h(View, { style: styles.reportSection },
+        h(Text, { style: styles.sectionLabel }, '内测反馈'),
+        h(Text, { style: styles.bodyText }, '提交问题、AI 质量或内容安全反馈, 运营后台会按当前账号归档。'),
+        h(View, { style: styles.segmentRow }, FEEDBACK_CATEGORIES.map(category => h(
+          SegmentedOption,
+          {
+            key: category.value,
+            label: category.label,
+            selected: feedbackCategory === category.value,
+            onPress: () => setFeedbackCategory(category.value),
+          },
+        ))),
+        h(View, { style: styles.ratingRow }, [1, 2, 3, 4, 5].map(value => h(
+          TouchableOpacity,
+          { key: value, style: [styles.ratingDot, feedbackRating === value && styles.ratingDotActive], onPress: () => setFeedbackRating(value) },
+          h(Text, { style: [styles.ratingText, feedbackRating === value && styles.ratingTextActive] }, String(value)),
+        ))),
+        h(Field, {
+          label: '反馈内容',
+          value: feedbackContent,
+          onChangeText: setFeedbackContent,
+          placeholder: '例如: 某个提示太直接、拍照识别不准、页面操作不顺畅',
+          multiline: true,
+        }),
+        h(Button, { label: '提交反馈', onPress: submitFeedback, secondary: true }),
+      ),
       h(View, { style: styles.actionRow }, [
         h(Button, { key: 'report', label: '看周报', onPress: () => setTab('report'), secondary: true }),
         h(Button, { key: 'plus', label: '管理 Plus', onPress: () => setTab('plus'), secondary: true }),
@@ -1275,6 +1343,59 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#111827',
     fontWeight: '700',
+  },
+  segmentRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  segmentOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    backgroundColor: '#ffffff',
+  },
+  segmentOptionActive: {
+    borderColor: '#4f46e5',
+    backgroundColor: '#eef2ff',
+  },
+  segmentOptionText: {
+    fontSize: 12,
+    color: '#374151',
+    fontWeight: '700',
+  },
+  segmentOptionTextActive: {
+    color: '#4f46e5',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  ratingDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    backgroundColor: '#ffffff',
+  },
+  ratingDotActive: {
+    borderColor: '#4f46e5',
+    backgroundColor: '#4f46e5',
+  },
+  ratingText: {
+    color: '#374151',
+    fontWeight: '700',
+  },
+  ratingTextActive: {
+    color: '#ffffff',
   },
   apiPresetRow: {
     flexDirection: 'row',

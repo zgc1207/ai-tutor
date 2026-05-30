@@ -187,5 +187,17 @@ export function createApiClient({ baseUrl, sessionToken, onSessionToken }) {
         body: { cancelAtPeriodEnd },
       });
     },
+
+    submitFeedback({ rating, category = 'other', content, page }) {
+      return request('/feedback', {
+        method: 'POST',
+        body: {
+          rating,
+          category,
+          content,
+          page,
+        },
+      });
+    },
   };
 }

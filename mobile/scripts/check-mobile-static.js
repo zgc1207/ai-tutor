@@ -112,6 +112,7 @@ const requiredApiCalls = [
   '/billing/status',
   '/billing/checkout',
   '/billing/cancel',
+  '/feedback',
   '/knowledge-tree',
   '/finish',
 ];
@@ -127,6 +128,8 @@ checks.push(!missingApiCalls.length
   && appSource.includes('answerMessages')
   && appSource.includes('consentAccepted')
   && appSource.includes('POLICY_VERSION')
+  && appSource.includes('submitFeedback')
+  && appSource.includes('FEEDBACK_CATEGORIES')
   && clientSource.includes('consentAccepted = false')
   && clientSource.includes("gradeStage: 'junior'")
   && !clientSource.includes('consentAccepted: true')
@@ -156,6 +159,8 @@ checks.push(appSource.includes('enterDemoMode')
   && appSource.includes('npm run api:local')
   && appSource.includes('我已阅读并同意内测协议')
   && appSource.includes('AI 仅作学习辅助')
+  && appSource.includes('内测反馈')
+  && appSource.includes('内容安全')
   && appSource.includes('仍不会')
   && appSource.includes('体验演示')
   && appSource.includes('演示模式')
