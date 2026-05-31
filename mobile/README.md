@@ -61,7 +61,7 @@ npm run start:local
 npm run start:local:offline
 ```
 
-`start:local:offline` 会追加 Expo CLI 的 `--offline`, 跳过网络请求, 适合先验证 Metro 和演示模式是否能打开。
+`start:local:offline` 会使用本地 Expo HOME, 关闭依赖校验和独立 React Native DevTools shell, 保留 `--localhost` 启动 Metro。这里不直接把 Expo CLI 的 `--offline` 透传给 Expo, 因为 Expo SDK 56 会把 `--offline` 强制切到 LAN host, 不适合作为本机端口验收。
 
 自动检查 Metro 是否真正监听:
 
@@ -69,7 +69,7 @@ npm run start:local:offline
 npm run start:check
 ```
 
-`start:check` 会用离线模式启动 Expo, 在超时前轮询本机端口, 并输出结构化结果。它用于定位“命令看起来启动了, 但 Metro 实际没有监听”的问题。
+`start:check` 会用网络受限模式启动 Expo, 在超时前轮询本机端口, 并输出结构化结果和 Expo startup log 里的最后阶段事件。它用于定位“命令看起来启动了, 但 Metro 实际没有监听”的问题。
 
 连接本机后端:
 

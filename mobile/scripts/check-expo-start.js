@@ -1,4 +1,5 @@
 import http from 'node:http';
+import fs from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
@@ -6,6 +7,7 @@ import { spawn } from 'node:child_process';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, '..');
 const startScript = join(projectRoot, 'scripts', 'start-expo-local.js');
+const expoStartLog = join(projectRoot, '.expo', 'dev', 'logs', 'start.log');
 const port = process.env.EXPO_CHECK_PORT || '8082';
 const timeoutMs = Number(process.env.EXPO_CHECK_TIMEOUT_MS || 30000);
 const startedAt = Date.now();
@@ -31,6 +33,36 @@ function probe() {
   });
 }
 
+function readExpoLogEvents() {
+  if (!fs.existsSync(expoStartLog)) return [];
+  return fs.readFileSync(expoStartLog, 'utf8')
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map(line => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter(event => event && event._t >= startedAt - 1000)
+    .slice(-20);
+}
+
+function diagnose(events) {
+  const eventNames = events.map(event => event._e).filter(Boolean);
+  if (eventNames.includes('metro:instantiate')) {
+    return 'Expo reached Metro initialization, but the expected HTTP port was not reachable.';
+  }
+  if (eventNames.includes('devserver:start')) {
+    return 'Expo started dev server setup, but did not reach Metro initialization.';
+  }
+  if (eventNames.includes('env:load')) {
+    return 'Expo loaded environment files, then stalled before dev server setup.';
+  }
+  return 'Expo did not emit enough startup events for a precise diagnosis.';
+}
+
 const child = spawn(process.execPath, [startScript, '--offline', '--port', port], {
   cwd: projectRoot,
   stdio: ['ignore', 'pipe', 'pipe'],
@@ -52,6 +84,12 @@ async function finish(ok, message) {
     port: Number(port),
     elapsedMs: Date.now() - startedAt,
     message,
+    diagnosis: diagnose(readExpoLogEvents()),
+    expoEvents: readExpoLogEvents().map(event => ({
+      event: event._e,
+      port: event.port,
+      host: event.host,
+    })),
     outputTail: output.join('').split('\n').slice(-20).join('\n'),
   };
 
