@@ -1,6 +1,7 @@
 import {
   getConfigStatus,
   isLegacyUserIdAuthEnabled,
+  isLlmReady,
   isMockLoginEnabled,
   isPublicUploadAccessEnabled,
   loadEnvFile,
@@ -29,7 +30,10 @@ const checks = [
   requirement('invite.required', Boolean(env.INTERNAL_TEST_INVITE_CODE), 'INTERNAL_TEST_INVITE_CODE must be set before inviting users.'),
   requirement('legacyUserIdAuth.disabled', !isLegacyUserIdAuthEnabled(env), 'ALLOW_LEGACY_USER_ID_AUTH must be false.'),
   requirement('llm.realProvider', Boolean(env.LLM_PROVIDER && env.LLM_PROVIDER !== 'mock'), 'LLM_PROVIDER must be a real provider.'),
+  requirement('llm.model', Boolean(env.LLM_MODEL), 'LLM_MODEL must be set for internal testing and production.'),
+  requirement('llm.baseUrl', Boolean(env.LLM_BASE_URL), 'LLM_BASE_URL must be set for internal testing and production.'),
   requirement('llm.apiKey', Boolean(env.LLM_API_KEY), 'LLM_API_KEY must be set for internal testing and production.'),
+  requirement('llm.ready', isLlmReady(env), 'Set LLM_READY=true only after npm run ai:check and real eval:ai pass.'),
   requirement('llm.timeout', !env.LLM_TIMEOUT_MS || Number.parseInt(env.LLM_TIMEOUT_MS, 10) > 0, 'LLM_TIMEOUT_MS must be positive when set.'),
   requirement('llm.maxOutputTokens', !env.LLM_MAX_OUTPUT_TOKENS || Number.parseInt(env.LLM_MAX_OUTPUT_TOKENS, 10) > 0, 'LLM_MAX_OUTPUT_TOKENS must be positive when set.'),
   requirement('server.bodyLimit', status.bodyLimitBytes >= 7 * 1024 * 1024, 'BODY_LIMIT_BYTES must be at least 7340032 bytes to support 5MB base64 image uploads.'),

@@ -1,5 +1,5 @@
 import { generateSocraticStep } from '../src/ai/llm-provider.js';
-import { loadEnvFile } from '../src/lib/config.js';
+import { isLlmReady, loadEnvFile } from '../src/lib/config.js';
 
 loadEnvFile();
 
@@ -7,6 +7,7 @@ const allowMock = process.argv.includes('--allow-mock');
 const provider = process.env.LLM_PROVIDER || 'mock';
 const model = process.env.LLM_MODEL || 'mock-socratic';
 const hasApiKey = Boolean(process.env.LLM_API_KEY);
+const llmReady = isLlmReady();
 const startedAt = Date.now();
 
 function finish(output, failed = false) {
@@ -19,6 +20,7 @@ if (!allowMock && (provider === 'mock' || !hasApiKey)) {
     ok: false,
     provider,
     model,
+    llmReady,
     message: 'LLM_PROVIDER must be non-mock and LLM_API_KEY must be set. Use --allow-mock only for local development checks.',
   }, true);
 } else {
@@ -43,6 +45,7 @@ if (!allowMock && (provider === 'mock' || !hasApiKey)) {
       ok,
       provider: result.meta.provider,
       model: result.meta.model,
+      llmReady,
       promptVersion: result.meta.promptVersion,
       latencyMs: result.meta.latencyMs,
       totalMs: Date.now() - startedAt,
@@ -51,7 +54,7 @@ if (!allowMock && (provider === 'mock' || !hasApiKey)) {
       stepType: result.step?.type,
       title: result.step?.title,
       message: ok
-        ? 'AI provider check passed.'
+        ? (llmReady ? 'AI provider check passed.' : 'AI provider check passed. Set LLM_READY=true only after eval:ai and manual review also pass.')
         : 'AI provider check returned mock or an invalid step.',
     }, !ok);
   } catch (error) {
@@ -59,6 +62,7 @@ if (!allowMock && (provider === 'mock' || !hasApiKey)) {
       ok: false,
       provider,
       model,
+      llmReady,
       totalMs: Date.now() - startedAt,
       message: error.message,
     }, true);

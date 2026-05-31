@@ -59,6 +59,10 @@ export function getConfigStatus(env = process.env) {
     warnings.push('LLM_API_KEY is empty, AI routes will fall back only if provider code allows it');
   }
 
+  if (isLlmReady(env) && (!env.LLM_PROVIDER || env.LLM_PROVIDER === 'mock' || !env.LLM_API_KEY)) {
+    warnings.push('LLM_READY is true but real provider settings are incomplete');
+  }
+
   if (isInternalTestInviteRequired(env) && isLegacyUserIdAuthEnabled(env)) {
     warnings.push('ALLOW_LEGACY_USER_ID_AUTH should be false in invited internal testing and production');
   }
@@ -69,6 +73,7 @@ export function getConfigStatus(env = process.env) {
     warnings,
     llmProvider: env.LLM_PROVIDER || 'mock',
     llmModel: env.LLM_MODEL || 'mock-socratic',
+    llmReady: isLlmReady(env),
     ocrProvider: env.OCR_PROVIDER || 'mock',
     corsAllowedOrigins: getCorsAllowedOrigins(env),
     bodyLimitBytes: getBodyLimitBytes(env),
@@ -192,6 +197,10 @@ export function getPushToken(env = process.env) {
 
 export function isPushReady(env = process.env) {
   return String(env.PUSH_READY || 'false').toLowerCase() === 'true';
+}
+
+export function isLlmReady(env = process.env) {
+  return String(env.LLM_READY || 'false').toLowerCase() === 'true';
 }
 
 export function getOpsHealthThresholds(env = process.env) {
