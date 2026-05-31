@@ -18,6 +18,7 @@
     "ci:contract": "node scripts/check-ci-contract.js",
     "env:contract": "node scripts/check-env-contract.js",
     "stage:status": "node scripts/check-stage-status.js",
+    "release:contract": "node scripts/check-release-contract.js",
     "db:setup": "prisma migrate deploy && node prisma/seed.js",
     "db:check": "node scripts/check-db.js",
     "smoke:api": "node scripts/smoke-api.js",

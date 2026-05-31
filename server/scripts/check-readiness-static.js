@@ -16,6 +16,7 @@ const REQUIRED_SCRIPTS = [
   'ci:contract',
   'env:contract',
   'stage:status',
+  'release:contract',
   'db:setup',
   'db:check',
   'smoke:api',

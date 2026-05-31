@@ -62,6 +62,13 @@ const gates = [
     '新增环境变量时同步 .env.example、deploy:check 和 env:contract。',
   ),
   gate(
+    'release-contract',
+    '内测包/上架准备合同',
+    packageHasScript('release:contract') && fileExists('mobile/eas.json') && fileExists('合规上架检查清单.md') ? 'ready' : 'missing',
+    'npm run release:contract checks EAS config, mobile assets, native permissions, legal docs, and compliance checklist.',
+    '移动端构建、权限、图标或合规材料变更时运行 release:contract。',
+  ),
+  gate(
     'database-smoke',
     '数据库/API 烟测',
     'external-blocked',
