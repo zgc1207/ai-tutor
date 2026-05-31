@@ -193,6 +193,7 @@ npm run prisma:generate
 npm run schema:contract
 npm run config:check
 npm run api:contract
+npm run ci:contract
 npm run runtime:check
 npm run prototype:check
 npm run mobile:check
@@ -214,9 +215,10 @@ npm run eval:ai
 ```
 
 其中 `npm run runtime:check`、`npm run prisma:deploy`、`npm run prisma:seed`、`npm run db:check`、`npm run verify:db` 和 `npm run smoke:api` 需要或检查本地运行环境; 数据库相关命令需要 PostgreSQL 已启动。
-`npm run verify:static` 是无需数据库的一键验证, 会执行 JS 语法检查、Prisma Client 生成、Prisma schema 校验、Schema Contract、配置检查、API Contract、上传清理、AI 评测和静态 readiness。仓库也提供 GitHub Actions workflow `Server Static Verification`, 用于 PR 和 main 分支推送时自动执行同一检查。
+`npm run verify:static` 是无需数据库的一键验证, 会执行 JS 语法检查、Prisma Client 生成、Prisma schema 校验、Schema Contract、配置检查、API Contract、CI Contract、上传清理、AI 评测和静态 readiness。仓库也提供 GitHub Actions workflow `Server Static Verification`, 用于 PR 和 main 分支推送时自动执行同一检查。
 `npm run schema:contract` 会校验 Prisma schema 中 17 个核心业务模型、关键字段、枚举、查询索引和用户数据级联删除关系, 避免数据库表设计在迭代中漂移。
 `npm run api:contract` 会读取根目录 `api-contract.json`, 校验接口元数据、鉴权声明、移动端可用接口、管理端接口, 并确认每个声明的接口都已在 Fastify 服务中注册。
+`npm run ci:contract` 会校验 GitHub Actions 静态验证和数据库/API smoke workflow 的触发条件、Node 版本、依赖安装、PostgreSQL service 和关键验证命令, 避免主干质量门禁被误删。
 `npm run prototype:check` 会检查 `prototype` 的 PWA 安装配置、service worker 缓存清单、离线页和原型 JS 语法; H5 内测分发前应单独执行一次。
 `prototype/admin.html` 是静态内测运营控制台, 可配置后端 API 地址和 `ADMIN_TOKEN`, 聚合健康闸口、关键指标、商业化对账、内容审核和最近用户。该页面只适合内部访问, 如果随 H5 一起托管, 必须通过独立域名、VPN、基础认证或平台访问控制限制公开访问, 并确保后端 `CORS_ALLOWED_ORIGINS` 只允许可信来源。
 `npm run mobile:check` 会执行 `mobile` Expo 骨架的静态检查, 包括 App 配置、核心文件、JS 语法和 bearer session API 契约; `npm run verify:static` 已包含该检查。
