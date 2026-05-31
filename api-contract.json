@@ -1,0 +1,355 @@
+{
+  "version": "2026-05-31",
+  "authSchemes": {
+    "public": "No authentication required.",
+    "bearer-session": "Mobile and H5 clients send Authorization: Bearer <sessionToken>.",
+    "admin-token": "Internal admin tools send the configured ADMIN_TOKEN.",
+    "provider-webhook": "External provider callback verified by provider-specific signature or token.",
+    "dev-public": "Development-only public endpoint; production access must be gated by environment policy."
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "auth": "public",
+      "clients": ["mobile", "prototype", "ops"],
+      "purpose": "Liveness check."
+    },
+    {
+      "method": "GET",
+      "path": "/ready",
+      "auth": "public",
+      "clients": ["mobile", "prototype", "ops"],
+      "purpose": "Readiness check including config and database status."
+    },
+    {
+      "method": "POST",
+      "path": "/auth/otp/request",
+      "auth": "public",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Request a login verification code."
+    },
+    {
+      "method": "POST",
+      "path": "/auth/otp/login",
+      "auth": "public",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Login with phone, code, invite code, and consent."
+    },
+    {
+      "method": "POST",
+      "path": "/auth/logout",
+      "auth": "bearer-session",
+      "clients": ["mobile"],
+      "purpose": "Revoke the current session."
+    },
+    {
+      "method": "POST",
+      "path": "/auth/mock-login",
+      "auth": "dev-public",
+      "clients": ["prototype"],
+      "purpose": "Development-only login compatibility endpoint."
+    },
+    {
+      "method": "GET",
+      "path": "/me",
+      "auth": "bearer-session",
+      "clients": ["mobile"],
+      "purpose": "Load the current student profile."
+    },
+    {
+      "method": "PATCH",
+      "path": "/me/profile",
+      "auth": "bearer-session",
+      "clients": ["prototype"],
+      "purpose": "Update profile fields."
+    },
+    {
+      "method": "PATCH",
+      "path": "/me/reminder",
+      "auth": "bearer-session",
+      "clients": ["prototype"],
+      "purpose": "Update review reminder preferences."
+    },
+    {
+      "method": "GET",
+      "path": "/account/export",
+      "auth": "bearer-session",
+      "clients": ["mobile"],
+      "purpose": "Export account data for privacy compliance."
+    },
+    {
+      "method": "DELETE",
+      "path": "/account",
+      "auth": "bearer-session",
+      "clients": ["mobile"],
+      "purpose": "Delete the current account."
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Load student dashboard summary."
+    },
+    {
+      "method": "POST",
+      "path": "/questions",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Create a text or image question."
+    },
+    {
+      "method": "POST",
+      "path": "/questions/:id/answer/next",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Generate the next Socratic answer step."
+    },
+    {
+      "method": "POST",
+      "path": "/questions/:id/finish",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Finish a question and optionally create an error record."
+    },
+    {
+      "method": "GET",
+      "path": "/review-tasks/today",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Load due review tasks."
+    },
+    {
+      "method": "GET",
+      "path": "/review-tasks",
+      "auth": "bearer-session",
+      "clients": ["prototype"],
+      "purpose": "Load review tasks by scope."
+    },
+    {
+      "method": "POST",
+      "path": "/review-tasks/:id/answer",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Submit a review answer and update mastery."
+    },
+    {
+      "method": "GET",
+      "path": "/mistakes",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Load error records."
+    },
+    {
+      "method": "GET",
+      "path": "/reports/weekly",
+      "auth": "bearer-session",
+      "clients": ["prototype"],
+      "purpose": "Load student weekly report."
+    },
+    {
+      "method": "GET",
+      "path": "/reports/parent-weekly",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Load guardian-facing weekly report."
+    },
+    {
+      "method": "GET",
+      "path": "/plans",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Load subscription plan options."
+    },
+    {
+      "method": "GET",
+      "path": "/billing/status",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Load subscription and entitlement status."
+    },
+    {
+      "method": "POST",
+      "path": "/billing/checkout",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Create a checkout order."
+    },
+    {
+      "method": "POST",
+      "path": "/billing/cancel",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Cancel the active subscription."
+    },
+    {
+      "method": "GET",
+      "path": "/billing/dev-checkout/:orderId",
+      "auth": "dev-public",
+      "clients": ["prototype"],
+      "purpose": "Development checkout completion page."
+    },
+    {
+      "method": "POST",
+      "path": "/billing/webhook",
+      "auth": "provider-webhook",
+      "clients": ["provider"],
+      "purpose": "Payment provider webhook."
+    },
+    {
+      "method": "GET",
+      "path": "/knowledge-tree",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Load knowledge mastery tree."
+    },
+    {
+      "method": "POST",
+      "path": "/uploads/images",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Upload a question image."
+    },
+    {
+      "method": "GET",
+      "path": "/uploads/images/:filename",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Read a locally stored uploaded image when allowed."
+    },
+    {
+      "method": "POST",
+      "path": "/ocr/extract",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Extract text from a question image."
+    },
+    {
+      "method": "GET",
+      "path": "/devices",
+      "auth": "bearer-session",
+      "clients": ["prototype"],
+      "purpose": "List registered push devices."
+    },
+    {
+      "method": "POST",
+      "path": "/devices",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Register a push device token."
+    },
+    {
+      "method": "DELETE",
+      "path": "/devices/:id",
+      "auth": "bearer-session",
+      "clients": ["prototype"],
+      "purpose": "Disable a push device token."
+    },
+    {
+      "method": "POST",
+      "path": "/feedback",
+      "auth": "bearer-session",
+      "clients": ["mobile", "prototype"],
+      "purpose": "Submit product feedback."
+    },
+    {
+      "method": "GET",
+      "path": "/notifications/status",
+      "auth": "bearer-session",
+      "clients": ["prototype"],
+      "purpose": "Load notification preference and delivery status."
+    },
+    {
+      "method": "POST",
+      "path": "/notifications/review-reminders/run",
+      "auth": "admin-token",
+      "clients": ["ops"],
+      "purpose": "Manually trigger review reminder delivery."
+    },
+    {
+      "method": "GET",
+      "path": "/notifications/deliveries",
+      "auth": "bearer-session",
+      "clients": ["prototype"],
+      "purpose": "Load notification delivery history."
+    },
+    {
+      "method": "GET",
+      "path": "/admin/summary",
+      "auth": "admin-token",
+      "clients": ["admin"],
+      "purpose": "Load admin summary."
+    },
+    {
+      "method": "GET",
+      "path": "/admin/metrics",
+      "auth": "admin-token",
+      "clients": ["admin"],
+      "purpose": "Load admin metrics."
+    },
+    {
+      "method": "GET",
+      "path": "/admin/ops-health",
+      "auth": "admin-token",
+      "clients": ["admin", "ops"],
+      "purpose": "Load operational health gates."
+    },
+    {
+      "method": "GET",
+      "path": "/admin/billing/reconciliation",
+      "auth": "admin-token",
+      "clients": ["admin"],
+      "purpose": "Load billing reconciliation data."
+    },
+    {
+      "method": "GET",
+      "path": "/admin/users",
+      "auth": "admin-token",
+      "clients": ["admin"],
+      "purpose": "List users for internal operations."
+    },
+    {
+      "method": "GET",
+      "path": "/admin/users/:id",
+      "auth": "admin-token",
+      "clients": ["admin"],
+      "purpose": "Load one user's operational detail."
+    },
+    {
+      "method": "GET",
+      "path": "/admin/feedback",
+      "auth": "admin-token",
+      "clients": ["admin"],
+      "purpose": "List submitted feedback."
+    },
+    {
+      "method": "GET",
+      "path": "/admin/ai-events",
+      "auth": "admin-token",
+      "clients": ["admin"],
+      "purpose": "List AI call events for quality and cost review."
+    },
+    {
+      "method": "GET",
+      "path": "/admin/content-review",
+      "auth": "admin-token",
+      "clients": ["admin"],
+      "purpose": "List content safety review items."
+    },
+    {
+      "method": "GET",
+      "path": "/admin/questions",
+      "auth": "admin-token",
+      "clients": ["admin"],
+      "purpose": "List recent questions."
+    },
+    {
+      "method": "GET",
+      "path": "/admin/questions/:id",
+      "auth": "admin-token",
+      "clients": ["admin"],
+      "purpose": "Load question detail for internal review."
+    }
+  ]
+}

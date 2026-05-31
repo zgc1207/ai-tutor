@@ -41,6 +41,7 @@ for (const file of jsFiles) {
 run('npm run prisma:generate', 'npm', ['run', 'prisma:generate']);
 run('npx prisma validate', 'npx', ['prisma', 'validate']);
 run('npm run config:check', 'npm', ['run', 'config:check']);
+run('npm run api:contract', 'npm', ['run', 'api:contract']);
 run('npm run prototype:check', 'npm', ['run', 'prototype:check']);
 run('npm run mobile:check', 'npm', ['run', 'mobile:check']);
 run('npm run uploads:cleanup', 'npm', ['run', 'uploads:cleanup']);

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const ROOT = process.cwd();
+const CONTRACT_PATH = path.resolve(ROOT, '..', 'api-contract.json');
 const REQUIRED_FILES = [
   'package.json',
   'app.json',
@@ -18,6 +19,7 @@ const REQUIRED_FILES = [
   'scripts/check-expo-start.js',
   'scripts/start-expo-local.js',
   'README.md',
+  '../api-contract.json',
 ];
 
 function pass(name, details = {}) {
@@ -157,32 +159,24 @@ checks.push(syntaxFailures.length
 
 const appSource = fs.readFileSync(path.join(ROOT, 'App.js'), 'utf8');
 const clientSource = fs.readFileSync(path.join(ROOT, 'src/api/client.js'), 'utf8');
-const requiredApiCalls = [
-  '/health',
-  '/ready',
-  '/auth/otp/request',
-  '/auth/otp/login',
-  '/account/export',
-  '/account',
-  '/dashboard',
-  '/questions',
-  '/review-tasks/today',
-  '/review-tasks/',
-  '/uploads/images',
-  '/ocr/extract',
-  '/devices',
-  '/mistakes',
-  '/reports/parent-weekly',
-  '/plans',
-  '/billing/status',
-  '/billing/checkout',
-  '/billing/cancel',
-  '/feedback',
-  '/knowledge-tree',
-  '/finish',
-];
+const apiContract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
+const mobileContractEndpoints = apiContract.endpoints.filter(endpoint => endpoint.clients?.includes('mobile'));
+function clientPathSnippets(endpointPath) {
+  return endpointPath
+    .split(/:[^/]+/)
+    .map(part => part.replace(/\/$/, ''))
+    .filter(part => part && part !== '/uploads/images');
+}
+
+const requiredApiCalls = mobileContractEndpoints
+  .filter(endpoint => !endpoint.path.includes(':filename'))
+  .flatMap(endpoint => clientPathSnippets(endpoint.path));
 const missingApiCalls = requiredApiCalls.filter(call => !clientSource.includes(call));
+const invalidMobileAuth = mobileContractEndpoints
+  .filter(endpoint => !['public', 'bearer-session'].includes(endpoint.auth))
+  .map(endpoint => `${endpoint.method} ${endpoint.path}`);
 checks.push(!missingApiCalls.length
+  && !invalidMobileAuth.length
   && appSource.includes('sessionToken')
   && appSource.includes('takeQuestionPhoto')
   && appSource.includes('registerReviewPushToken')
@@ -212,8 +206,12 @@ checks.push(!missingApiCalls.length
   && !clientSource.includes('body: { correct }')
   && !clientSource.includes('consentAccepted: true')
   && !appSource.includes('x-user-id')
-  ? pass('mobile.apiContract', { calls: requiredApiCalls.length, auth: 'bearer-session' })
-  : fail('mobile.apiContract', { missingApiCalls }));
+  ? pass('mobile.apiContract', {
+      contractVersion: apiContract.version,
+      calls: requiredApiCalls.length,
+      auth: 'bearer-session',
+    })
+  : fail('mobile.apiContract', { missingApiCalls, invalidMobileAuth }));
 
 checks.push(appSource.includes('enterDemoMode')
   && appSource.includes('DEMO_DASHBOARD')

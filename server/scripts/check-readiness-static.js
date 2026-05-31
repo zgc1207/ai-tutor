@@ -11,6 +11,7 @@ const REQUIRED_SCRIPTS = [
   'config:check',
   'runtime:check',
   'deploy:check',
+  'api:contract',
   'db:setup',
   'db:check',
   'smoke:api',
