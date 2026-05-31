@@ -299,6 +299,7 @@ export default function App() {
   const [accountExportSummary, setAccountExportSummary] = useState(null);
   const [deleteConfirmArmed, setDeleteConfirmArmed] = useState(false);
   const [selectedLegalDoc, setSelectedLegalDoc] = useState(null);
+  const [lastBootstrapKey, setLastBootstrapKey] = useState('');
 
   const api = useMemo(
     () => createApiClient({ baseUrl: apiBase, sessionToken, onSessionToken: setSessionToken }),
@@ -320,6 +321,13 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const bootstrapKey = `${apiBase}|${sessionToken}`;
+    if (demoMode || !apiBase || !sessionToken || lastBootstrapKey === bootstrapKey) return;
+    setLastBootstrapKey(bootstrapKey);
+    loadAuthenticatedData({ reason: '同步账号数据' });
+  }, [apiBase, sessionToken, demoMode, lastBootstrapKey]);
+
   async function run(label, action) {
     setStatus(`${label}中...`);
     try {
@@ -330,6 +338,75 @@ export default function App() {
       setStatus(`${label}失败: ${error.message}`);
       return null;
     }
+  }
+
+  async function loadAuthenticatedData({ reason = '刷新账号数据' } = {}) {
+    if (demoMode) {
+      setDashboard(DEMO_DASHBOARD);
+      setReviewTasks(DEMO_REVIEW_TASKS);
+      setMistakes(DEMO_MISTAKES);
+      setReport(DEMO_REPORT);
+      setKnowledgeTree(DEMO_KNOWLEDGE_TREE);
+      setMeInfo(DEMO_ME);
+      setStatus('演示账号数据已刷新');
+      return;
+    }
+
+    if (!apiBase || !sessionToken) {
+      setStatus('请先完成登录后再同步账号数据');
+      return;
+    }
+
+    setStatus(`${reason}中...`);
+    const results = await Promise.allSettled([
+      api.getMe(),
+      api.getDashboard(),
+      api.getReviewTasks(),
+      api.getMistakes(),
+      api.getParentWeeklyReport(),
+      api.getPlans(),
+      api.getBillingStatus(),
+      api.getKnowledgeTree({ subject: 'all' }),
+      api.getHealth(),
+      api.getReady(),
+    ]);
+
+    const [
+      meResult,
+      dashboardResult,
+      reviewResult,
+      mistakesResult,
+      reportResult,
+      plansResult,
+      billingResult,
+      knowledgeResult,
+      healthResult,
+      readyResult,
+    ] = results;
+
+    if (meResult.status === 'fulfilled') setMeInfo(meResult.value);
+    if (dashboardResult.status === 'fulfilled') setDashboard(dashboardResult.value);
+    if (reviewResult.status === 'fulfilled') setReviewTasks(reviewResult.value.tasks || reviewResult.value || []);
+    if (mistakesResult.status === 'fulfilled') setMistakes(mistakesResult.value || []);
+    if (reportResult.status === 'fulfilled') setReport(reportResult.value);
+    if (plansResult.status === 'fulfilled' && plansResult.value?.plans) setPlans(plansResult.value.plans);
+    if (billingResult.status === 'fulfilled') setBillingStatus(billingResult.value);
+    if (knowledgeResult.status === 'fulfilled' && knowledgeResult.value?.subjects) setKnowledgeTree(knowledgeResult.value.subjects);
+
+    const health = healthResult.status === 'fulfilled' ? healthResult.value : null;
+    const ready = readyResult.status === 'fulfilled' ? readyResult.value : null;
+    setRuntimeCheck({
+      health: health?.ok ? 'ok' : 'failed',
+      ready: ready?.ok ? 'ok' : 'failed',
+      detail: ready?.ok
+        ? '后端和数据库已就绪, 已自动同步首页、复习、错题和报告'
+        : '账号数据已部分同步, 但 /ready 未通过, 请检查数据库或环境变量',
+    });
+
+    const failures = results.filter(result => result.status === 'rejected');
+    setStatus(failures.length
+      ? `${reason}部分完成: ${failures.length} 项失败, 可在“我的”页检查后端状态`
+      : `${reason}完成`);
   }
 
   async function requestOtp() {
@@ -1271,6 +1348,7 @@ export default function App() {
       ),
       h(View, { style: styles.actionRow }, [
         h(Button, { key: 'refreshMe', label: '刷新账号信息', onPress: loadMeInfo, secondary: true }),
+        h(Button, { key: 'syncData', label: '同步账号数据', onPress: () => loadAuthenticatedData(), secondary: true }),
         h(Button, { key: 'checkRuntime', label: '检查后端状态', onPress: checkApiRuntime, secondary: true }),
       ]),
       h(View, { style: styles.reportSection },
