@@ -115,7 +115,7 @@ const output = {
   nextSteps: [
     'Install Docker Desktop or another Docker runtime.',
     'Run docker compose up -d postgres from the repository root.',
-    'Run cd server && npm run db:setup && npm run smoke:api.'
+    'Run cd server && npm run verify:db.'
   ]
 };
 
