@@ -7,6 +7,9 @@ const REQUIRED_FILES = [
   'package.json',
   'app.json',
   'eas.json',
+  'assets/icon.png',
+  'assets/adaptive-icon.png',
+  'assets/splash-icon.png',
   'App.js',
   'src/api/client.js',
   'src/device/native-features.js',
@@ -26,6 +29,16 @@ function fail(name, details = {}) {
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, relativePath), 'utf8'));
+}
+
+function pngSize(relativePath) {
+  const file = fs.readFileSync(path.join(ROOT, relativePath));
+  const pngSignature = '89504e470d0a1a0a';
+  if (file.subarray(0, 8).toString('hex') !== pngSignature) return null;
+  return {
+    width: file.readUInt32BE(16),
+    height: file.readUInt32BE(20),
+  };
 }
 
 const checks = [];
@@ -53,10 +66,14 @@ const requiredAndroidPermissions = ['CAMERA', 'POST_NOTIFICATIONS'];
 const missingAndroidPermissions = requiredAndroidPermissions.filter(permission => !appConfig?.android?.permissions?.includes(permission));
 checks.push(appConfig?.name
   && appConfig?.slug
+  && appConfig?.icon === './assets/icon.png'
+  && appConfig?.splash?.image === './assets/splash-icon.png'
+  && appConfig?.splash?.resizeMode === 'contain'
   && appIdPattern.test(iosBundleIdentifier)
   && appIdPattern.test(androidPackage)
   && !iosBundleIdentifier.includes('example')
   && !androidPackage.includes('example')
+  && appConfig?.android?.adaptiveIcon?.foregroundImage === './assets/adaptive-icon.png'
   && appConfig?.ios?.infoPlist?.NSCameraUsageDescription
   && appConfig?.ios?.infoPlist?.NSPhotoLibraryUsageDescription
   && appConfig?.ios?.infoPlist?.NSUserNotificationsUsageDescription
@@ -76,6 +93,23 @@ checks.push(appConfig?.name
       appConfig,
       missingAndroidPermissions,
       message: 'App config must use production-style package identifiers and explicit permission descriptions.',
+    }));
+
+const iconSize = pngSize('assets/icon.png');
+const adaptiveIconSize = pngSize('assets/adaptive-icon.png');
+const splashIconSize = pngSize('assets/splash-icon.png');
+checks.push(iconSize?.width === 1024 && iconSize?.height === 1024
+  && adaptiveIconSize?.width === 1024 && adaptiveIconSize?.height === 1024
+  && splashIconSize?.width === 1024 && splashIconSize?.height === 1024
+  ? pass('mobile.visualAssets', {
+      icon: iconSize,
+      adaptiveIcon: adaptiveIconSize,
+      splashIcon: splashIconSize,
+    })
+  : fail('mobile.visualAssets', {
+      icon: iconSize,
+      adaptiveIcon: adaptiveIconSize,
+      splashIcon: splashIconSize,
     }));
 
 const requiredBuildProfiles = ['development', 'preview', 'production'];

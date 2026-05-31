@@ -7,6 +7,7 @@
 当前范围:
 
 - App 身份已使用 `com.zgc1207.aitutor` 作为 iOS bundle identifier 和 Android package, 静态检查会阻止继续使用 `com.example.*`。
+- 已复用原型品牌图标生成移动端 `icon.png`、`adaptive-icon.png` 和 `splash-icon.png`, 并接入 Expo 图标和启动屏配置。
 - 已补充 EAS 构建配置和本地版本号: iOS `buildNumber`、Android `versionCode`, 并提供 preview 内测包构建脚本。
 - OTP 登录前必须显式勾选同意用户协议、隐私政策和未成年人使用说明; 客户端不再默认代填 `consentAccepted`。
 - 登录页提供“体验演示”入口, 不需要后端和验证码即可查看首页、提问、错题、复习、报告和知识图谱核心体验。
