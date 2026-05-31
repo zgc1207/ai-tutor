@@ -48,6 +48,7 @@ run('npm run env:contract', 'npm', ['run', 'env:contract']);
 run('npm run stage:status', 'npm', ['run', 'stage:status']);
 run('npm run release:contract', 'npm', ['run', 'release:contract']);
 run('npm run provider:contract', 'npm', ['run', 'provider:contract']);
+run('npm run ops:contract', 'npm', ['run', 'ops:contract']);
 run('npm run prototype:check', 'npm', ['run', 'prototype:check']);
 run('npm run mobile:check', 'npm', ['run', 'mobile:check']);
 run('npm run uploads:cleanup', 'npm', ['run', 'uploads:cleanup']);

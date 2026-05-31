@@ -76,6 +76,13 @@ const gates = [
     '接入或替换 OCR、短信、对象存储、支付、推送服务商时运行 provider:contract。',
   ),
   gate(
+    'ops-contract',
+    '运营观测/扩量合同',
+    packageHasScript('ops:contract') ? 'ready' : 'missing',
+    'npm run ops:contract checks admin metrics, ops health, smoke coverage, thresholds, and expansion docs.',
+    '运营指标、健康阈值、后台路由或扩量规则变更时运行 ops:contract。',
+  ),
+  gate(
     'database-smoke',
     '数据库/API 烟测',
     'external-blocked',
