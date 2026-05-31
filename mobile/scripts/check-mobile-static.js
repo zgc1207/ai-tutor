@@ -15,6 +15,7 @@ const REQUIRED_FILES = [
   'src/device/native-features.js',
   'src/storage/session-store.js',
   'scripts/print-local-api.js',
+  'scripts/check-expo-start.js',
   'scripts/start-expo-local.js',
   'README.md',
 ];
@@ -119,6 +120,8 @@ checks.push(missingBuildProfiles.length === 0
   && easConfig?.build?.preview?.distribution === 'internal'
   && easConfig?.build?.preview?.android?.buildType === 'apk'
   && easConfig?.build?.production?.android?.buildType === 'app-bundle'
+  && pkg.scripts?.['start:local:offline']
+  && pkg.scripts?.['start:check']
   && pkg.scripts?.['build:android:preview']
   && pkg.scripts?.['build:ios:preview']
   ? pass('mobile.easBuildConfig', {
@@ -137,6 +140,7 @@ const jsFiles = [
   'src/device/native-features.js',
   'src/storage/session-store.js',
   'scripts/check-mobile-static.js',
+  'scripts/check-expo-start.js',
   'scripts/print-local-api.js',
   'scripts/start-expo-local.js',
 ];

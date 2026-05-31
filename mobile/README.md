@@ -55,6 +55,22 @@ npm run start:local
 
 `start:local` 会把 Expo 的 HOME 指到 `mobile/.expo-home`, 并使用 `--localhost` 启动 Metro。该目录已加入 `.gitignore`, 不会进入仓库。
 
+如果网络受限导致 Expo 在启动时卡在 DevTools 下载, 使用离线启动:
+
+```bash
+npm run start:local:offline
+```
+
+`start:local:offline` 会追加 Expo CLI 的 `--offline`, 跳过网络请求, 适合先验证 Metro 和演示模式是否能打开。
+
+自动检查 Metro 是否真正监听:
+
+```bash
+npm run start:check
+```
+
+`start:check` 会用离线模式启动 Expo, 在超时前轮询本机端口, 并输出结构化结果。它用于定位“命令看起来启动了, 但 Metro 实际没有监听”的问题。
+
 连接本机后端:
 
 ```bash

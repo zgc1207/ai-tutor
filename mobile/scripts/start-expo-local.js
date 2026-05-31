@@ -10,12 +10,14 @@ const localHome = join(projectRoot, '.expo-home');
 mkdirSync(localHome, { recursive: true });
 
 const expoBin = join(projectRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'expo.cmd' : 'expo');
-const child = spawn(expoBin, ['start', '--localhost'], {
+const extraArgs = process.argv.slice(2);
+const hostArgs = extraArgs.includes('--offline') ? [] : ['--localhost'];
+const child = spawn(expoBin, ['start', ...hostArgs, ...extraArgs], {
   cwd: projectRoot,
   env: {
     ...process.env,
     HOME: localHome,
-    EXPO_NO_TELEMETRY: '1'
+    EXPO_NO_TELEMETRY: '1',
   },
   stdio: 'inherit'
 });
