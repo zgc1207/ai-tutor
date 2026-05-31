@@ -8,6 +8,13 @@ import {
 } from './prompts.js';
 
 const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
+const DEFAULT_TIMEOUT_MS = 10000;
+const DEFAULT_MAX_OUTPUT_TOKENS = 700;
+
+function positiveInt(value, fallback) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 function safeJsonParse(text) {
   try {
@@ -97,11 +104,13 @@ function providerConfig() {
     model: process.env.LLM_MODEL || 'mock-socratic',
     apiKey: process.env.LLM_API_KEY,
     baseUrl: process.env.LLM_BASE_URL || DEFAULT_BASE_URL,
+    timeoutMs: positiveInt(process.env.LLM_TIMEOUT_MS, DEFAULT_TIMEOUT_MS),
+    maxOutputTokens: positiveInt(process.env.LLM_MAX_OUTPUT_TOKENS, DEFAULT_MAX_OUTPUT_TOKENS),
   };
 }
 
 async function requestJsonCompletion({ messages, promptVersion, temperature = 0.3 }) {
-  const { provider, model, apiKey, baseUrl } = providerConfig();
+  const { provider, model, apiKey, baseUrl, timeoutMs, maxOutputTokens } = providerConfig();
   const startedAt = Date.now();
 
   if (!apiKey || provider === 'mock') {
@@ -119,19 +128,33 @@ async function requestJsonCompletion({ messages, promptVersion, temperature = 0.
     };
   }
 
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      response_format: { type: 'json_object' },
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  let response;
+  try {
+    response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        max_tokens: maxOutputTokens,
+        response_format: { type: 'json_object' },
+      }),
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`LLM request timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const text = await response.text();

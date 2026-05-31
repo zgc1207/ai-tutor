@@ -24,7 +24,8 @@
     "retention:cleanup": "node scripts/cleanup-db-retention.js",
     "reminders:run": "node scripts/send-review-reminders.js",
     "ops:check": "node scripts/check-ops-health.js",
-    "eval:ai": "node scripts/eval-ai.js"
+    "eval:ai": "node scripts/eval-ai.js",
+    "ai:check": "node scripts/check-ai-provider.js"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

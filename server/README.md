@@ -82,6 +82,8 @@ LLM_PROVIDER="openai"
 LLM_MODEL="gpt-4o-mini"
 LLM_API_KEY="..."
 LLM_BASE_URL="https://api.openai.com/v1"
+LLM_TIMEOUT_MS=10000
+LLM_MAX_OUTPUT_TOKENS=700
 BODY_LIMIT_BYTES=8388608
 SECURITY_HEADERS_ENABLED=true
 RATE_LIMIT_ENABLED=true
@@ -132,7 +134,7 @@ AUTH_OTP_RETENTION_DAYS=7
 AUTH_OTP_MIN_INTERVAL_SECONDS=60
 ```
 
-内测阶段建议保留每日额度和邀请码。`OCR_PROVIDER` 默认为 `mock`, 后续可通过 `OCR_ENDPOINT` 接第三方 OCR。`BODY_LIMIT_BYTES` 默认 8MB, 用于容纳 5MB 图片转 base64 后的 JSON 请求。`SECURITY_HEADERS_ENABLED` 默认开启基础安全响应头, 生产不得关闭。`RATE_LIMIT_ENABLED` 默认开启进程内基础限流, `RATE_LIMIT_WINDOW_MS` 和 `RATE_LIMIT_MAX` 控制每个来源 IP 的固定窗口请求数; 生产仍建议叠加网关/WAF 限流。`CORS_ALLOWED_ORIGINS` 为空时允许开发联调来源; 生产必须配置为 App/API 网关和管理后台的真实来源列表。`AUTH_OTP_SECRET` 用于验证码哈希, `AUTH_OTP_DELIVERY_PROVIDER=http` 时会将 `{ phone, code, purpose, requestId, expiresAt }` POST 到 `AUTH_OTP_DELIVERY_ENDPOINT`, 并用 `AUTH_OTP_DELIVERY_TOKEN` 作为 bearer token。`UPLOAD_STORAGE_PROVIDER=local` 使用本地文件存储, `UPLOAD_STORAGE_PROVIDER=http` 时会将 `{ contentType, imageData }` POST 到 `UPLOAD_STORAGE_ENDPOINT`, 并用 `UPLOAD_STORAGE_TOKEN` 作为 bearer token, 发送网关需返回 `imageUrl`。`AUTH_OTP_TTL_MINUTES`、`AUTH_OTP_MAX_ATTEMPTS` 和 `AUTH_OTP_MIN_INTERVAL_SECONDS` 控制验证码有效期、错误次数和重复发送间隔, `AUTH_OTP_RETENTION_DAYS` 控制验证码记录清理周期。`DAILY_QUESTION_LIMIT` 控制单账号每日新题数, `DAILY_AI_STEP_LIMIT` 控制单账号每日 AI 引导步数。`PLUS_DAILY_QUESTION_LIMIT`、`PLUS_DAILY_AI_STEP_LIMIT` 和 `PLUS_PRICE_CENTS_MONTHLY` 控制 Plus 订阅权益和价格; `PAYMENT_PROVIDER=dev` 仅用于开发和 CI, `PAYMENT_PROVIDER=http` 会向 `PAYMENT_PROVIDER_ENDPOINT` 创建 checkout, `PAYMENT_WEBHOOK_SECRET` 用于校验支付回调签名, 生产必须设置 `PAYMENT_READY=true` 前确认真实支付、退款和对账流程。`PUSH_PROVIDER=dev` 仅记录模拟投递, `PUSH_PROVIDER=http` 会把设备 token 和通知内容 POST 到 `PUSH_ENDPOINT`, 并用 `PUSH_TOKEN` 作为 bearer token; 生产必须设置 `PUSH_READY=true` 前确认真实推送到达、退订和夜间免打扰策略。`OPS_MAX_AI_FAILURE_RATE`、`OPS_MAX_DAILY_AI_COST`、`OPS_MIN_REVIEW_COMPLETION_RATE` 和 `OPS_MIN_AVERAGE_FEEDBACK_RATING` 控制运营健康检查阈值, 触发失败时应暂停扩量。`UPLOAD_RETENTION_DAYS` 控制本地题目图片清理周期, `AI_EVENT_RETENTION_DAYS` 控制 AI 调用日志保留周期, `EXPIRED_SESSION_RETENTION_DAYS` 控制过期和已登出 session 的清理周期, `NOTIFICATION_RETENTION_DAYS` 控制通知投递记录保留周期, `DISABLED_DEVICE_TOKEN_RETENTION_DAYS` 控制停用设备 token 保留周期, `INTERNAL_TEST_INVITE_CODE` 控制内测准入。`ALLOW_LEGACY_USER_ID_AUTH` 仅用于早期联调兼容, 内测和生产应设为 `false`, 强制所有业务请求使用 session token。`ALLOW_MOCK_LOGIN` 可在内测期保留为 `true`, 生产必须设为 `false`。`ALLOW_PUBLIC_UPLOAD_ACCESS` 仅用于早期图片 URL 联调; 生产必须设为 `false`, 本地图片读取需要有效 session。
+内测阶段建议保留每日额度和邀请码。`LLM_PROVIDER` 当前支持 OpenAI 兼容的 chat completions 接口; `LLM_BASE_URL` 可指向 OpenAI 或兼容网关, `LLM_TIMEOUT_MS` 控制单次模型请求超时, `LLM_MAX_OUTPUT_TOKENS` 控制单次 JSON 响应长度。真实 key 配好后先运行 `npm run ai:check`, 确认返回的 provider 不是 `mock`, 再运行 `npm run eval:ai -- --output evals/reports/latest.json` 做质量评测。`OCR_PROVIDER` 默认为 `mock`, 后续可通过 `OCR_ENDPOINT` 接第三方 OCR。`BODY_LIMIT_BYTES` 默认 8MB, 用于容纳 5MB 图片转 base64 后的 JSON 请求。`SECURITY_HEADERS_ENABLED` 默认开启基础安全响应头, 生产不得关闭。`RATE_LIMIT_ENABLED` 默认开启进程内基础限流, `RATE_LIMIT_WINDOW_MS` 和 `RATE_LIMIT_MAX` 控制每个来源 IP 的固定窗口请求数; 生产仍建议叠加网关/WAF 限流。`CORS_ALLOWED_ORIGINS` 为空时允许开发联调来源; 生产必须配置为 App/API 网关和管理后台的真实来源列表。`AUTH_OTP_SECRET` 用于验证码哈希, `AUTH_OTP_DELIVERY_PROVIDER=http` 时会将 `{ phone, code, purpose, requestId, expiresAt }` POST 到 `AUTH_OTP_DELIVERY_ENDPOINT`, 并用 `AUTH_OTP_DELIVERY_TOKEN` 作为 bearer token。`UPLOAD_STORAGE_PROVIDER=local` 使用本地文件存储, `UPLOAD_STORAGE_PROVIDER=http` 时会将 `{ contentType, imageData }` POST 到 `UPLOAD_STORAGE_ENDPOINT`, 并用 `UPLOAD_STORAGE_TOKEN` 作为 bearer token, 发送网关需返回 `imageUrl`。`AUTH_OTP_TTL_MINUTES`、`AUTH_OTP_MAX_ATTEMPTS` 和 `AUTH_OTP_MIN_INTERVAL_SECONDS` 控制验证码有效期、错误次数和重复发送间隔, `AUTH_OTP_RETENTION_DAYS` 控制验证码记录清理周期。`DAILY_QUESTION_LIMIT` 控制单账号每日新题数, `DAILY_AI_STEP_LIMIT` 控制单账号每日 AI 引导步数。`PLUS_DAILY_QUESTION_LIMIT`、`PLUS_DAILY_AI_STEP_LIMIT` 和 `PLUS_PRICE_CENTS_MONTHLY` 控制 Plus 订阅权益和价格; `PAYMENT_PROVIDER=dev` 仅用于开发和 CI, `PAYMENT_PROVIDER=http` 会向 `PAYMENT_PROVIDER_ENDPOINT` 创建 checkout, `PAYMENT_WEBHOOK_SECRET` 用于校验支付回调签名, 生产必须设置 `PAYMENT_READY=true` 前确认真实支付、退款和对账流程。`PUSH_PROVIDER=dev` 仅记录模拟投递, `PUSH_PROVIDER=http` 会把设备 token 和通知内容 POST 到 `PUSH_ENDPOINT`, 并用 `PUSH_TOKEN` 作为 bearer token; 生产必须设置 `PUSH_READY=true` 前确认真实推送到达、退订和夜间免打扰策略。`OPS_MAX_AI_FAILURE_RATE`、`OPS_MAX_DAILY_AI_COST`、`OPS_MIN_REVIEW_COMPLETION_RATE` 和 `OPS_MIN_AVERAGE_FEEDBACK_RATING` 控制运营健康检查阈值, 触发失败时应暂停扩量。`UPLOAD_RETENTION_DAYS` 控制本地题目图片清理周期, `AI_EVENT_RETENTION_DAYS` 控制 AI 调用日志保留周期, `EXPIRED_SESSION_RETENTION_DAYS` 控制过期和已登出 session 的清理周期, `NOTIFICATION_RETENTION_DAYS` 控制通知投递记录保留周期, `DISABLED_DEVICE_TOKEN_RETENTION_DAYS` 控制停用设备 token 保留周期, `INTERNAL_TEST_INVITE_CODE` 控制内测准入。`ALLOW_LEGACY_USER_ID_AUTH` 仅用于早期联调兼容, 内测和生产应设为 `false`, 强制所有业务请求使用 session token。`ALLOW_MOCK_LOGIN` 可在内测期保留为 `true`, 生产必须设为 `false`。`ALLOW_PUBLIC_UPLOAD_ACCESS` 仅用于早期图片 URL 联调; 生产必须设为 `false`, 本地图片读取需要有效 session。
 
 ## 已有接口
 
@@ -203,6 +205,7 @@ npm run uploads:cleanup
 npm run retention:cleanup
 npm run reminders:run -- --time 19:30 --dry-run
 npm run ops:check -- --days 7
+npm run ai:check
 npm run eval:ai
 ```
 
@@ -213,6 +216,7 @@ npm run eval:ai
 `npm run mobile:check` 会执行 `mobile` Expo 骨架的静态检查, 包括 App 配置、核心文件、JS 语法和 bearer session API 契约; `npm run verify:static` 已包含该检查。
 完整 API 链路由 GitHub Actions workflow `Server API Smoke` 覆盖, 它会启动 PostgreSQL service, 执行 `npm run db:setup`、`npm run db:check` 和 `npm run smoke:api`。
 `npm run deploy:check -- --profile internal` 和 `npm run deploy:check -- --profile production` 用于目标环境部署前的严格配置检查; 开发环境不要求通过。
+`npm run ai:check` 不依赖数据库; 默认要求真实 `LLM_PROVIDER` 和 `LLM_API_KEY`, 会发起一次启发式答疑请求并确认没有落回 mock。开发阶段可用 `npm run ai:check -- --allow-mock` 验证脚本形态。
 `npm run eval:ai` 不依赖数据库; 默认使用 mock provider, 配置 `LLM_API_KEY` 后可评测真实模型。
 `npm run uploads:cleanup` 会删除 `uploads/images` 中超过 `UPLOAD_RETENTION_DAYS` 的本地图片, 内测环境建议通过 cron 或部署平台定时任务每天执行一次。
 `npm run retention:cleanup` 会将已过期订阅标记为 `expired`, 删除超过 `AI_EVENT_RETENTION_DAYS` 的 AI 事件日志、超过 `EXPIRED_SESSION_RETENTION_DAYS` 的过期或已登出 session、超过 `AUTH_OTP_RETENTION_DAYS` 的验证码记录、超过 `NOTIFICATION_RETENTION_DAYS` 的通知投递记录, 以及超过 `DISABLED_DEVICE_TOKEN_RETENTION_DAYS` 的停用设备 token, 需要数据库连接, 内测环境建议每天执行一次。

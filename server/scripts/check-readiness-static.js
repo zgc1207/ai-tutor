@@ -22,6 +22,7 @@ const REQUIRED_SCRIPTS = [
   'reminders:run',
   'ops:check',
   'eval:ai',
+  'ai:check',
 ];
 
 const REQUIRED_DOCS = [
@@ -284,7 +285,7 @@ const output = {
     'Run npm run smoke:api against the initialized database',
     'Schedule npm run retention:cleanup daily after database setup',
     'Schedule npm run reminders:run -- --time HH:mm every minute or every configured reminder slot after push setup',
-    'Configure a real LLM provider and re-run npm run eval:ai before inviting users',
+    'Configure a real LLM provider, run npm run ai:check, then re-run npm run eval:ai before inviting users',
   ],
 };
 
