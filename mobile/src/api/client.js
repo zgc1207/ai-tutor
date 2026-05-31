@@ -92,10 +92,10 @@ export function createApiClient({ baseUrl, sessionToken, onSessionToken }) {
       return request('/review-tasks/today');
     },
 
-    answerReviewTask(taskId, { correct }) {
+    answerReviewTask(taskId, { answer }) {
       return request(`/review-tasks/${taskId}/answer`, {
         method: 'POST',
-        body: { correct },
+        body: { answer },
       });
     },
 

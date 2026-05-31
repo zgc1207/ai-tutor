@@ -511,7 +511,7 @@ export default function App() {
     }
 
     const result = await run(correct ? '提交答对结果' : '提交仍不会结果', () => (
-      api.answerReviewTask(task.id, { correct })
+      api.answerReviewTask(task.id, { answer: getReviewTaskAnswer(task, correct) })
     ));
     if (result) await loadReview();
   }
@@ -542,6 +542,13 @@ export default function App() {
       title: step.title || '下一步提示',
       content: step.message?.content || step.content || '继续观察题目条件',
     }));
+  }
+
+  function getReviewTaskAnswer(task, correct) {
+    const correctAnswer = task.variantQuestion?.correctAnswer;
+    if (correct && correctAnswer) return correctAnswer;
+    if (correct) return '我已答对';
+    return '__mobile_review_wrong_answer__';
   }
 
   async function ask() {
@@ -1017,6 +1024,10 @@ export default function App() {
             h(Text, { style: styles.listTitle }, task.errorRecord?.knowledgePoint || task.knowledgePoint || '复习任务'),
             h(Text, { style: styles.listMeta }, task.cycle || task.cycleLabel || '待复习'),
             task.prompt ? h(Text, { style: styles.bodyText }, task.prompt) : null,
+            task.variantQuestion?.title ? h(Text, { style: styles.bodyText }, task.variantQuestion.title) : null,
+            Array.isArray(task.variantQuestion?.options) && task.variantQuestion.options.length
+              ? h(Text, { style: styles.listMeta }, `选项: ${task.variantQuestion.options.join(' / ')}`)
+              : null,
             h(View, { style: styles.actionRow }, [
               h(Button, { key: 'correct', label: '答对', onPress: () => answerReviewTask(task, true), secondary: true }),
               h(Button, { key: 'wrong', label: '仍不会', onPress: () => answerReviewTask(task, false), secondary: true }),
