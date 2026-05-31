@@ -59,6 +59,10 @@ const REQUIRED_WORKFLOWS = [
 const REQUIRED_MOBILE_FILES = [
   'mobile/package.json',
   'mobile/app.json',
+  'mobile/eas.json',
+  'mobile/assets/icon.png',
+  'mobile/assets/adaptive-icon.png',
+  'mobile/assets/splash-icon.png',
   'mobile/App.js',
   'mobile/src/api/client.js',
   'mobile/src/device/native-features.js',
