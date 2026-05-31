@@ -198,6 +198,7 @@ npm run verify:static
 npm run prisma:deploy
 npm run prisma:seed
 npm run db:check
+npm run verify:db
 npm run readiness:static
 node -e "import('./src/app.js').then(async ({ buildApp }) => { const app = await buildApp({ logger: false }); const health = await app.inject({ method: 'GET', url: '/health' }); const ready = await app.inject({ method: 'GET', url: '/ready' }); console.log(health.statusCode, health.body); console.log(ready.statusCode, ready.body); await app.close(); })"
 npm run smoke:api
@@ -209,12 +210,12 @@ npm run ai:check
 npm run eval:ai
 ```
 
-其中 `npm run runtime:check`、`npm run prisma:deploy`、`npm run prisma:seed`、`npm run db:check` 和 `npm run smoke:api` 需要或检查本地运行环境; 数据库相关命令需要 PostgreSQL 已启动。
+其中 `npm run runtime:check`、`npm run prisma:deploy`、`npm run prisma:seed`、`npm run db:check`、`npm run verify:db` 和 `npm run smoke:api` 需要或检查本地运行环境; 数据库相关命令需要 PostgreSQL 已启动。
 `npm run verify:static` 是无需数据库的一键验证, 会执行 JS 语法检查、Prisma Client 生成、Prisma schema 校验、配置检查、上传清理、AI 评测和静态 readiness。仓库也提供 GitHub Actions workflow `Server Static Verification`, 用于 PR 和 main 分支推送时自动执行同一检查。
 `npm run prototype:check` 会检查 `prototype` 的 PWA 安装配置、service worker 缓存清单、离线页和原型 JS 语法; H5 内测分发前应单独执行一次。
 `prototype/admin.html` 是静态内测运营控制台, 可配置后端 API 地址和 `ADMIN_TOKEN`, 聚合健康闸口、关键指标、商业化对账、内容审核和最近用户。该页面只适合内部访问, 如果随 H5 一起托管, 必须通过独立域名、VPN、基础认证或平台访问控制限制公开访问, 并确保后端 `CORS_ALLOWED_ORIGINS` 只允许可信来源。
 `npm run mobile:check` 会执行 `mobile` Expo 骨架的静态检查, 包括 App 配置、核心文件、JS 语法和 bearer session API 契约; `npm run verify:static` 已包含该检查。
-完整 API 链路由 GitHub Actions workflow `Server API Smoke` 覆盖, 它会启动 PostgreSQL service, 执行 `npm run db:setup`、`npm run db:check` 和 `npm run smoke:api`。
+完整 API 链路由 GitHub Actions workflow `Server API Smoke` 覆盖, 它会启动 PostgreSQL service, 执行 `npm run verify:db`。该命令会串行运行数据库迁移/种子、`db:check`、数据清理、提醒 dry run 和完整 `smoke:api`。
 `npm run deploy:check -- --profile internal` 和 `npm run deploy:check -- --profile production` 用于目标环境部署前的严格配置检查; 开发环境不要求通过。
 `npm run ai:check` 不依赖数据库; 默认要求真实 `LLM_PROVIDER` 和 `LLM_API_KEY`, 会发起一次启发式答疑请求并确认没有落回 mock。开发阶段可用 `npm run ai:check -- --allow-mock` 验证脚本形态。
 `npm run eval:ai` 不依赖数据库; 默认使用 mock provider, 配置 `LLM_API_KEY` 后可评测真实模型。

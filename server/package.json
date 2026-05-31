@@ -16,6 +16,7 @@
     "db:setup": "prisma migrate deploy && node prisma/seed.js",
     "db:check": "node scripts/check-db.js",
     "smoke:api": "node scripts/smoke-api.js",
+    "verify:db": "node scripts/verify-db.js",
     "verify:static": "node scripts/verify-static.js",
     "readiness:static": "node scripts/check-readiness-static.js",
     "prototype:check": "node scripts/check-prototype-static.js",

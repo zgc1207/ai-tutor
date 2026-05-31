@@ -14,6 +14,7 @@ const REQUIRED_SCRIPTS = [
   'db:setup',
   'db:check',
   'smoke:api',
+  'verify:db',
   'verify:static',
   'prototype:check',
   'mobile:check',
@@ -281,8 +282,7 @@ const output = {
   },
   checks,
   nextRequiredExternalChecks: [
-    'Start PostgreSQL, then run npm run db:setup',
-    'Run npm run smoke:api against the initialized database',
+    'Start PostgreSQL, then run npm run verify:db',
     'Schedule npm run retention:cleanup daily after database setup',
     'Schedule npm run reminders:run -- --time HH:mm every minute or every configured reminder slot after push setup',
     'Configure a real LLM provider, run npm run ai:check, then re-run npm run eval:ai before inviting users',
