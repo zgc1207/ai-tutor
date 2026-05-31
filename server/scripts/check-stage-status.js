@@ -69,6 +69,13 @@ const gates = [
     '移动端构建、权限、图标或合规材料变更时运行 release:contract。',
   ),
   gate(
+    'provider-contract',
+    '第三方服务商接入合同',
+    packageHasScript('provider:contract') ? 'ready' : 'missing',
+    'npm run provider:contract checks OCR, OTP delivery, upload storage, payment, and push provider seams.',
+    '接入或替换 OCR、短信、对象存储、支付、推送服务商时运行 provider:contract。',
+  ),
+  gate(
     'database-smoke',
     '数据库/API 烟测',
     'external-blocked',
