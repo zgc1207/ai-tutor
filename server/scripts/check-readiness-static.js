@@ -15,6 +15,7 @@ const REQUIRED_SCRIPTS = [
   'schema:contract',
   'ci:contract',
   'env:contract',
+  'deploy:contract',
   'stage:status',
   'release:contract',
   'provider:contract',
