@@ -31,10 +31,12 @@ npm run runtime:check
 项目根目录提供了 `compose.yaml`。如果本机已安装 Docker:
 
 ```bash
-docker compose up -d postgres
+npm run db:start:local
 ```
 
-如果本机直接安装 PostgreSQL, 只需保证 `.env` 里的 `DATABASE_URL` 可连接。
+`db:start:local` 会优先检查 `DATABASE_URL` 是否已可连接; 如果 Docker 可用, 会执行根目录 `compose.yaml` 启动 `postgres` 并等待 TCP 端口可达。如果本机没有 Docker, 脚本会输出 Docker Desktop、Homebrew PostgreSQL 和远程 PostgreSQL 三条可选修复路径。
+
+如果本机直接安装 PostgreSQL, 只需保证 `.env` 里的 `DATABASE_URL` 可连接, 再运行 `npm run db:doctor`。
 
 5. 初始化数据库:
 
@@ -208,6 +210,7 @@ npm run deploy:check -- --profile internal
 npm run verify:static
 npm run prisma:deploy
 npm run prisma:seed
+npm run db:start:local
 npm run db:doctor
 npm run db:check
 npm run verify:db
@@ -223,7 +226,7 @@ npm run ai:check
 npm run eval:ai
 ```
 
-其中 `npm run runtime:check`、`npm run db:doctor`、`npm run prisma:deploy`、`npm run prisma:seed`、`npm run db:check`、`npm run verify:db` 和 `npm run smoke:api` 需要或检查本地运行环境; 数据库相关命令需要 PostgreSQL 已启动。
+其中 `npm run runtime:check`、`npm run db:start:local`、`npm run db:doctor`、`npm run prisma:deploy`、`npm run prisma:seed`、`npm run db:check`、`npm run verify:db` 和 `npm run smoke:api` 需要或检查本地运行环境; 数据库相关命令需要 PostgreSQL 已启动。
 `npm run verify:static` 是无需数据库的一键验证, 会执行 JS 语法检查、Prisma Client 生成、Prisma schema 校验、Schema Contract、配置检查、API Contract、CI Contract、Env Contract、Deploy Contract、Stage Status、Release Contract、Provider Contract、Ops Contract、上传清理、AI 评测和静态 readiness。仓库也提供 GitHub Actions workflow `Server Static Verification`, 用于 PR 和 main 分支推送时自动执行同一检查。
 `npm run schema:contract` 会校验 Prisma schema 中 17 个核心业务模型、关键字段、枚举、查询索引和用户数据级联删除关系, 避免数据库表设计在迭代中漂移。
 `npm run api:contract` 会读取根目录 `api-contract.json`, 校验接口元数据、鉴权声明、移动端可用接口、管理端接口, 并确认每个声明的接口都已在 Fastify 服务中注册。
@@ -239,7 +242,7 @@ npm run eval:ai
 `prototype/admin.html` 是静态内测运营控制台, 可配置后端 API 地址和 `ADMIN_TOKEN`, 聚合健康闸口、关键指标、商业化对账、内容审核和最近用户。该页面只适合内部访问, 如果随 H5 一起托管, 必须通过独立域名、VPN、基础认证或平台访问控制限制公开访问, 并确保后端 `CORS_ALLOWED_ORIGINS` 只允许可信来源。
 `npm run mobile:check` 会执行 `mobile` Expo 骨架的静态检查, 包括 App 配置、核心文件、JS 语法和 bearer session API 契约; `npm run verify:static` 已包含该检查。
 完整 API 链路由 GitHub Actions workflow `Server API Smoke` 覆盖, 它会启动 PostgreSQL service, 执行 `npm run verify:db`。该命令会串行运行数据库迁移/种子、`db:check`、数据清理、提醒 dry run 和完整 `smoke:api`。
-`npm run db:doctor` 会在数据库烟测前检查 `DATABASE_URL` 解析、Prisma migrations、Docker/compose 提示和 PostgreSQL TCP 端口连通性; `npm run verify:db` 已把它作为第一步。
+`npm run db:start:local` 会在 Docker 可用时启动 compose PostgreSQL 并等待 TCP 端口可达; Docker 不可用时输出 Docker Desktop、Homebrew PostgreSQL 和远程 PostgreSQL 三条修复路径。`npm run db:doctor` 会在数据库烟测前检查 `DATABASE_URL` 解析、Prisma migrations、Docker/compose 提示和 PostgreSQL TCP 端口连通性; `npm run verify:db` 已把它作为第一步。
 `npm run deploy:check -- --profile internal` 和 `npm run deploy:check -- --profile production` 用于目标环境部署前的严格配置检查; 开发环境不要求通过。
 `npm run ai:check` 不依赖数据库; 默认要求真实 `LLM_PROVIDER` 和 `LLM_API_KEY`, 会发起一次启发式答疑请求并确认没有落回 mock。开发阶段可用 `npm run ai:check -- --allow-mock` 验证脚本形态。`LLM_READY=true` 是部署门禁, 只能在真实 `ai:check`、真实 `eval:ai` 和人工抽检都通过后设置。
 `npm run eval:ai` 不依赖数据库; 默认使用 mock provider, 配置 `LLM_API_KEY` 后可评测真实模型。

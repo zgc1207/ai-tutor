@@ -80,9 +80,9 @@ const gates = [
   gate(
     'database-preflight',
     '数据库烟测前置诊断',
-    packageHasScript('db:doctor') ? 'ready' : 'missing',
-    'npm run db:doctor checks DATABASE_URL parsing, migrations, Docker hints, and PostgreSQL TCP reachability before verify:db.',
-    '数据库连接、compose 或迁移流程变更时先运行 db:doctor，再运行 verify:db。',
+    packageHasScript('db:start:local') && packageHasScript('db:doctor') ? 'ready' : 'missing',
+    'npm run db:start:local can start/wait for Docker PostgreSQL when available; npm run db:doctor checks DATABASE_URL, migrations, Docker hints, and TCP reachability before verify:db.',
+    '本地先运行 db:start:local；数据库连接、compose 或迁移流程变更时再运行 db:doctor 和 verify:db。',
   ),
   gate(
     'release-contract',
