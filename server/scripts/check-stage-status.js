@@ -34,6 +34,13 @@ const gates = [
     '每次提交前执行 cd server && npm run verify:static。',
   ),
   gate(
+    'pm-stage-report',
+    'PM 阶段汇报',
+    packageHasScript('stage:report') ? 'ready' : 'missing',
+    'npm run stage:report outputs a readable stage report with ready gates, blockers, config gaps, and next commands.',
+    '阶段完成或汇报前执行 cd server && npm run stage:report。',
+  ),
+  gate(
     'api-contract',
     '前后端 API 合同',
     fileExists('api-contract.json') && packageHasScript('api:contract') ? 'ready' : 'missing',

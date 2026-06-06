@@ -22,6 +22,7 @@
     "env:contract": "node scripts/check-env-contract.js",
     "deploy:contract": "node scripts/check-deployment-contract.js",
     "stage:status": "node scripts/check-stage-status.js",
+    "stage:report": "node scripts/generate-stage-report.js",
     "release:contract": "node scripts/check-release-contract.js",
     "provider:contract": "node scripts/check-provider-contract.js",
     "ops:contract": "node scripts/check-ops-contract.js",
