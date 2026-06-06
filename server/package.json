@@ -16,6 +16,7 @@
     "api:contract": "node scripts/check-api-contract.js",
     "frontend:contract": "node scripts/check-frontend-contract.js",
     "core:contract": "node scripts/check-core-flow-contract.js",
+    "mainflow:contract": "node scripts/check-main-flow-data-contract.js",
     "smoke:contract": "node scripts/check-smoke-contract.js",
     "schema:contract": "node scripts/check-schema-contract.js",
     "ci:contract": "node scripts/check-ci-contract.js",

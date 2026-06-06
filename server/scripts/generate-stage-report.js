@@ -73,6 +73,7 @@ const lines = [
   'cd server',
   'npm run stage:status',
   'npm run stage:report',
+  'npm run mainflow:contract',
   'npm run db:start:local',
   'npm run verify:db',
   'cd ../mobile',

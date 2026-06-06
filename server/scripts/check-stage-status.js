@@ -67,6 +67,13 @@ const gates = [
     '主学习链路的页面、接口、表结构或 smoke 变更时运行 core:contract。',
   ),
   gate(
+    'main-flow-data-design',
+    '主链路数据设计',
+    fileExists('主链路数据设计.md') && packageHasScript('mainflow:contract') ? 'ready' : 'missing',
+    '主链路数据设计.md maps login, ask, AI guide, mistakes, review, dashboard, knowledge tree, and parent report to frontend entry, API, database tables, and verification commands.',
+    '主链路、数据库表或接口变更时同步主链路数据设计.md，并运行 mainflow:contract。',
+  ),
+  gate(
     'smoke-contract',
     '数据库/API smoke 覆盖合同',
     packageHasScript('smoke:contract') ? 'ready' : 'missing',

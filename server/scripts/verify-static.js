@@ -45,6 +45,7 @@ run('npm run config:check', 'npm', ['run', 'config:check']);
 run('npm run api:contract', 'npm', ['run', 'api:contract']);
 run('npm run frontend:contract', 'npm', ['run', 'frontend:contract']);
 run('npm run core:contract', 'npm', ['run', 'core:contract']);
+run('npm run mainflow:contract', 'npm', ['run', 'mainflow:contract']);
 run('npm run smoke:contract', 'npm', ['run', 'smoke:contract']);
 run('npm run ci:contract', 'npm', ['run', 'ci:contract']);
 run('npm run env:contract', 'npm', ['run', 'env:contract']);
