@@ -35,6 +35,7 @@
     "retention:cleanup": "node scripts/cleanup-db-retention.js",
     "reminders:run": "node scripts/send-review-reminders.js",
     "ops:check": "node scripts/check-ops-health.js",
+    "ai:contract": "node scripts/check-ai-readiness-contract.js",
     "eval:ai": "node scripts/eval-ai.js",
     "ai:check": "node scripts/check-ai-provider.js"
   },

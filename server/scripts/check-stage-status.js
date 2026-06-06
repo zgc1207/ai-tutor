@@ -99,6 +99,13 @@ const gates = [
     '运营指标、健康阈值、后台路由或扩量规则变更时运行 ops:contract。',
   ),
   gate(
+    'ai-readiness-contract',
+    'AI 上线证据合同',
+    packageHasScript('ai:contract') ? 'ready' : 'missing',
+    'npm run ai:contract checks provider self-check, eval report, manual review template, deployment gates, and docs.',
+    '真实模型、Prompt、评测题集或 LLM_READY 规则变更时运行 ai:contract。',
+  ),
+  gate(
     'database-smoke',
     '数据库/API 烟测',
     'external-blocked',

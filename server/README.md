@@ -217,6 +217,7 @@ npm run uploads:cleanup
 npm run retention:cleanup
 npm run reminders:run -- --time 19:30 --dry-run
 npm run ops:check -- --days 7
+npm run ai:contract
 npm run ai:check
 npm run eval:ai
 ```
@@ -244,6 +245,7 @@ npm run eval:ai
 `npm run retention:cleanup` 会将已过期订阅标记为 `expired`, 删除超过 `AI_EVENT_RETENTION_DAYS` 的 AI 事件日志、超过 `EXPIRED_SESSION_RETENTION_DAYS` 的过期或已登出 session、超过 `AUTH_OTP_RETENTION_DAYS` 的验证码记录、超过 `NOTIFICATION_RETENTION_DAYS` 的通知投递记录, 以及超过 `DISABLED_DEVICE_TOKEN_RETENTION_DAYS` 的停用设备 token, 需要数据库连接, 内测环境建议每天执行一次。
 `npm run reminders:run -- --time 19:30` 会按指定提醒时间查找待复习用户并投递复习提醒; 部署平台可每分钟运行一次当前时间, 或按允许的提醒时间槽运行。加 `--dry-run` 只返回候选用户, 不写投递记录。
 `npm run ops:check -- --days 7` 会按运营阈值检查 AI 失败率、AI 日均成本、复习完成率和反馈评分; 结果为 `fail` 时应暂停扩量并排查。
+`npm run ai:contract` 会校验 AI provider 自检、自动评测报告、人工抽检模板、部署开关和文档证据链; 它不替代真实 key 验证, 但能防止 `LLM_READY` 的上线规则漂移。
 `npm run readiness:static` 会检查不依赖数据库的内测门槛, 包括关键脚本、迁移、文档、路由注册、评测报告和清理配置。
 
 `/health` 只检查服务进程是否存活; `/ready` 会检查必要环境变量和数据库连接, 更适合部署、内测放量和监控探针使用。
@@ -272,6 +274,7 @@ npm run eval:ai -- --output evals/reports/latest.json
 `POST /feedback` 会拦截身份证号、银行卡号、家庭住址等敏感个人信息, 避免反馈渠道保存不必要的隐私数据。
 
 真实模型评测后, 建议同步填写根目录 `AI评测记录模板.md`。
+进入内测前还应执行 `npm run ai:contract`, 确认 AI 上线证据链完整; 该命令通过不代表真实模型已通过, 真实模型仍必须执行 `ai:check`、真实 `eval:ai` 和人工抽检。
 进入内测前, 按根目录 `内测准备清单.md` 做检查。
 
 ## 内测运营接口

@@ -32,6 +32,7 @@ const REQUIRED_SCRIPTS = [
   'retention:cleanup',
   'reminders:run',
   'ops:check',
+  'ai:contract',
   'eval:ai',
   'ai:check',
 ];
