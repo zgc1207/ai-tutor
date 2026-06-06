@@ -37,10 +37,7 @@ const MAIN_FLOW_ACCEPTANCE = [
 async function request(app, options) {
   const response = await app.inject({
     ...options,
-    headers: {
-      'content-type': 'application/json',
-      ...(options.headers || {}),
-    },
+    headers: requestHeaders(options),
   });
   const body = response.body ? JSON.parse(response.body) : null;
   if (response.statusCode >= 400) {
@@ -52,16 +49,21 @@ async function request(app, options) {
 async function requestExpectFailure(app, options, expectedStatus) {
   const response = await app.inject({
     ...options,
-    headers: {
-      'content-type': 'application/json',
-      ...(options.headers || {}),
-    },
+    headers: requestHeaders(options),
   });
   const body = response.body ? JSON.parse(response.body) : null;
   if (response.statusCode !== expectedStatus) {
     throw new Error(`${options.method || 'GET'} ${options.url} expected ${expectedStatus}, got ${response.statusCode} ${response.body}`);
   }
   return body;
+}
+
+function requestHeaders(options) {
+  const headers = { ...(options.headers || {}) };
+  if (options.payload !== undefined && !headers['content-type']) {
+    headers['content-type'] = 'application/json';
+  }
+  return headers;
 }
 
 async function main() {

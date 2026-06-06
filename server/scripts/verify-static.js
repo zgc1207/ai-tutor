@@ -55,10 +55,6 @@ run('npm run stage:status', 'npm', ['run', 'stage:status']);
 run('npm run release:contract', 'npm', ['run', 'release:contract']);
 run('npm run provider:contract', 'npm', ['run', 'provider:contract']);
 run('npm run ops:contract', 'npm', ['run', 'ops:contract']);
-run('npm run ai:contract', 'npm', ['run', 'ai:contract']);
-run('npm run prototype:check', 'npm', ['run', 'prototype:check']);
-run('npm run mobile:check', 'npm', ['run', 'mobile:check']);
-run('npm run uploads:cleanup', 'npm', ['run', 'uploads:cleanup']);
 run('npm run eval:ai -- --output evals/reports/latest.json', 'npm', [
   'run',
   'eval:ai',
@@ -66,6 +62,10 @@ run('npm run eval:ai -- --output evals/reports/latest.json', 'npm', [
   '--output',
   'evals/reports/latest.json',
 ]);
+run('npm run ai:contract', 'npm', ['run', 'ai:contract']);
+run('npm run prototype:check', 'npm', ['run', 'prototype:check']);
+run('npm run mobile:check', 'npm', ['run', 'mobile:check']);
+run('npm run uploads:cleanup', 'npm', ['run', 'uploads:cleanup']);
 run('npm run readiness:static', 'npm', ['run', 'readiness:static']);
 
 console.log('\nStatic verification passed.');
