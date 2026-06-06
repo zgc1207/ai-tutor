@@ -14,6 +14,7 @@ const REQUIRED_SCRIPTS = [
   'api:contract',
   'frontend:contract',
   'core:contract',
+  'smoke:contract',
   'schema:contract',
   'ci:contract',
   'env:contract',

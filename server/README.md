@@ -197,6 +197,7 @@ npm run config:check
 npm run api:contract
 npm run frontend:contract
 npm run core:contract
+npm run smoke:contract
 npm run ci:contract
 npm run env:contract
 npm run deploy:contract
@@ -233,6 +234,7 @@ npm run eval:ai
 `npm run api:contract` 会读取根目录 `api-contract.json`, 校验接口元数据、鉴权声明、移动端可用接口、管理端接口, 并确认每个声明的接口都已在 Fastify 服务中注册。
 `npm run frontend:contract` 会校验 mobile、H5 原型和 admin 控制台的关键 API 调用、页面入口和鉴权策略, 确认前端联调面没有偏离后端合同。
 `npm run core:contract` 会校验主学习链路的数据库表、API 合同、移动端 API 客户端、移动端页面、H5 原型页面和 `smoke:api` 覆盖, 包括登录、提问、AI 引导、错题、复习和报告。
+`npm run smoke:contract` 会校验 `verify:db` 流程和 `smoke:api` 覆盖范围, 包括账号、学习主链路、安全拦截、Plus/支付、推送提醒、运营后台和隐私/账号删除。
 `npm run ci:contract` 会校验 GitHub Actions 静态验证和数据库/API smoke workflow 的触发条件、Node 版本、依赖安装、PostgreSQL service 和关键验证命令, 避免主干质量门禁被误删。
 `npm run env:contract` 会校验 `.env.example` 的关键变量、安全默认值、正数配置和 `deploy:check` 覆盖范围, 避免内测/生产配置漂移。
 `npm run deploy:contract` 会校验后端 Dockerfile、Docker ignore、内测/生产环境模板和部署说明, 避免部署资产与上线门禁脱节。

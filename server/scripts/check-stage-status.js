@@ -55,6 +55,13 @@ const gates = [
     '主学习链路的页面、接口、表结构或 smoke 变更时运行 core:contract。',
   ),
   gate(
+    'smoke-contract',
+    '数据库/API smoke 覆盖合同',
+    packageHasScript('smoke:contract') ? 'ready' : 'missing',
+    'npm run smoke:contract checks verify:db pipeline and runtime smoke coverage for auth, learning, safety, billing, notifications, ops, and privacy.',
+    '数据库/API smoke、verify:db 流程或主链路验收范围变更时运行 smoke:contract。',
+  ),
+  gate(
     'schema-contract',
     '数据库 Schema 合同',
     packageHasScript('schema:contract') ? 'ready' : 'missing',
