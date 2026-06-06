@@ -68,6 +68,9 @@ function candidatePorts(events) {
 function diagnose(events) {
   const eventNames = events.map(event => event._e).filter(Boolean);
   const outputText = output.join('');
+  if (/EPERM/i.test(outputText)) {
+    return 'Expo or Metro hit EPERM while binding a port. Check OS firewall/local network permissions for Node, VPN/security software, or try EXPO_CHECK_PORT=19000 npm run start:check.';
+  }
   if (/Another process is running|already running|address already in use|EADDRINUSE/i.test(outputText)) {
     return 'Expo appears blocked by an existing process or occupied port.';
   }
@@ -127,6 +130,12 @@ async function finish(ok, message) {
       host: event.host,
       ageMs: Date.now() - event._t,
     })),
+    suggestedNextActions: [
+      'Run npm run runtime:check and inspect mobileRuntime.metroPorts.bindMatrix.',
+      'Try EXPO_CHECK_PORT=19000 npm run start:check if 8081/8082 are blocked.',
+      'Check macOS firewall, local network permissions, VPN, proxy, or endpoint security if errors include EPERM.',
+      'If a port is already in use, stop the existing Expo/Metro process or choose another EXPO_CHECK_PORT.',
+    ],
     outputTail: output.join('').split('\n').slice(-20).join('\n'),
   };
 

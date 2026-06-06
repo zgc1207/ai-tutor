@@ -261,6 +261,7 @@ const requiredStartDiagnostics = [
   'expoStartLog',
   'outputTail',
   'childPid',
+  'suggestedNextActions',
   'Metro is reachable on port',
 ];
 const missingStartDiagnostics = requiredStartDiagnostics.filter(snippet => !expoStartCheckSource.includes(snippet));
@@ -279,6 +280,8 @@ const requiredRuntimeDiagnostics = [
   'mobileRuntime.packages',
   'mobileRuntime.expoCli',
   'mobileRuntime.metroPorts',
+  'bindMatrix',
+  'EPERM',
   'mobileRuntime.lanAddresses',
   'expoGoDeviceUrls',
 ];

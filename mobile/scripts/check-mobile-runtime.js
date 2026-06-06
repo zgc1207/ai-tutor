@@ -44,18 +44,19 @@ function localAddresses() {
     .map(item => item.address);
 }
 
-function canBind(port) {
+function canBind(port, host) {
   return new Promise(resolve => {
     const server = net.createServer();
     server.once('error', error => resolve({
       port,
+      host,
       available: false,
       error: error.code || error.message,
     }));
     server.once('listening', () => {
-      server.close(() => resolve({ port, available: true }));
+      server.close(() => resolve({ port, host, available: true }));
     });
-    server.listen(port, '127.0.0.1');
+    server.listen(port, host);
   });
 }
 
@@ -109,13 +110,30 @@ checks.push(expoVersion.ok
   ? pass('mobileRuntime.expoCli', { version: expoVersion.stdout || expoVersion.stderr })
   : fail('mobileRuntime.expoCli', { message: expoVersion.error || expoVersion.stderr || 'Expo CLI is not available in node_modules.' }));
 
-const ports = await Promise.all(METRO_PORTS.map(canBind));
-const blockedPorts = ports.filter(port => !port.available);
-checks.push(blockedPorts.length
-  ? warn('mobileRuntime.metroPorts', { ports, message: 'A blocked Metro port may be fine if an existing Expo server is already running.' })
-  : pass('mobileRuntime.metroPorts', { ports }));
-
 const addresses = localAddresses();
+const bindHosts = [
+  '127.0.0.1',
+  '0.0.0.0',
+  ...addresses,
+];
+const bindMatrix = await Promise.all(METRO_PORTS.flatMap(port => bindHosts.map(host => canBind(port, host))));
+const blockedBinds = bindMatrix.filter(item => !item.available);
+const epermBinds = blockedBinds.filter(item => item.error === 'EPERM');
+checks.push(blockedBinds.length
+  ? warn('mobileRuntime.metroPorts', {
+      ports: METRO_PORTS,
+      bindHosts,
+      bindMatrix,
+      message: epermBinds.length
+        ? 'Metro port binding returned EPERM on this machine. Check macOS local network/firewall permissions, VPN/security software, or run Expo on a different port.'
+        : 'A blocked Metro port may be fine if an existing Expo server is already running.',
+    })
+  : pass('mobileRuntime.metroPorts', {
+      ports: METRO_PORTS,
+      bindHosts,
+      bindMatrix,
+    }));
+
 checks.push(addresses.length
   ? pass('mobileRuntime.lanAddresses', {
       expoGoDeviceUrls: addresses.map(address => `http://${address}:${DEFAULT_API_PORT}`),
@@ -147,6 +165,7 @@ const output = {
   checks,
   nextSteps: [
     'Run npm run start:check to verify Metro can actually listen.',
+    'If mobileRuntime.metroPorts reports EPERM, try EXPO_CHECK_PORT=19000 npm run start:check and check OS firewall/local network permissions for Node.',
     'Run npm run api:local after the backend is running to choose the API URL for simulator or Expo Go.',
     'Use Expo Go or a simulator to walk through demo mode, login, ask, mistake, review, report, camera, gallery, and notification permission.',
   ],

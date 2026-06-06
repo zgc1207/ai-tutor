@@ -41,7 +41,7 @@ npm run verify:static
 npm run runtime:check
 ```
 
-`runtime:check` 会检查 Node、npm、package-lock、node_modules、Expo CLI、关键 Expo/React Native 包、常用 Metro 端口和真机/模拟器后端 API 地址建议。它是启动 Expo 前的环境预检, 不能替代 `start:check` 的 Metro 监听验证。
+`runtime:check` 会检查 Node、npm、package-lock、node_modules、Expo CLI、关键 Expo/React Native 包、常用 Metro 端口、端口/host bind matrix 和真机/模拟器后端 API 地址建议。它是启动 Expo 前的环境预检, 不能替代 `start:check` 的 Metro 监听验证。
 
 安装依赖并启动:
 
@@ -73,11 +73,13 @@ npm run runtime:check
 npm run start:check
 ```
 
-`runtime:check` 先确认本机依赖、Expo CLI 和端口状态。`start:check` 会用网络受限模式启动 Expo, 在超时前轮询本机端口, 并输出结构化结果、启动命令、子进程 PID、实际探测端口、Expo startup log 路径、最近阶段事件和原始输出尾部。它用于定位“命令看起来启动了, 但 Metro 实际没有监听”的问题; 如果 Expo 事件里出现了不同端口, 脚本也会一起探测。
+`runtime:check` 先确认本机依赖、Expo CLI 和端口状态, 并分别检查 `127.0.0.1`、`0.0.0.0` 和 LAN 地址能否绑定常用 Metro 端口。`start:check` 会用网络受限模式启动 Expo, 在超时前轮询本机端口, 并输出结构化结果、启动命令、子进程 PID、实际探测端口、Expo startup log 路径、最近阶段事件、建议动作和原始输出尾部。它用于定位“命令看起来启动了, 但 Metro 实际没有监听”的问题; 如果 Expo 事件里出现了不同端口, 脚本也会一起探测。
 
 当前已知本机诊断:
 
 - 2026-06-06 执行 `npm run start:check`, 30 秒后仍未探测到 Metro; Expo startup log 只到 `env:load`, 说明当前机器卡在 dev server setup 之前。该问题仍需继续排查本机 Expo/Node/网络环境或换真机/模拟器环境复测。
+- 2026-06-06 执行 `npm run runtime:check`, 8081/8082 在 `127.0.0.1`、`0.0.0.0` 和 LAN 地址 `192.168.31.185` 上全部返回 `EPERM`。这更像本机 Node/网络权限、VPN/代理、安全软件或系统防火墙问题, 不是单纯端口占用。
+- 2026-06-06 执行 `EXPO_CHECK_PORT=19000 npm run start:check`, 30 秒后仍停在 `env:load`, 没有进入 `devserver:start`。说明换备用端口不能单独解决当前机器的 Expo 启动阻塞。
 
 连接本机后端:
 

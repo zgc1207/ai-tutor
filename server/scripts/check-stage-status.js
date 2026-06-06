@@ -135,7 +135,7 @@ const gates = [
     'mobile-runtime-preflight',
     '移动端运行预检',
     mobilePackageHasScript('runtime:check') && mobilePackageHasScript('start:check') ? 'ready' : 'missing',
-    'cd mobile && npm run runtime:check checks Node, npm, dependencies, Expo CLI, Metro ports, and simulator/Expo Go API URL suggestions before start:check.',
+    'cd mobile && npm run runtime:check checks Node, npm, dependencies, Expo CLI, Metro port/host bind matrix, and simulator/Expo Go API URL suggestions before start:check.',
     '移动端依赖、Expo 启动脚本或端口诊断变更时运行 cd mobile && npm run runtime:check && npm run start:check。',
   ),
   gate(
@@ -170,8 +170,8 @@ const gates = [
     'mobile-runtime',
     '移动端真实启动',
     'external-blocked',
-    'Mobile runtime preflight is available, but Metro still needs a successful start:check and real-device/simulator walkthrough. Latest local preflight found Metro ports 8081/8082 blocked with EPERM.',
-    '先解决本机 Metro 端口监听问题, 再执行 cd mobile && npm run runtime:check && npm run start:check，并用真机或模拟器验收。',
+    'Mobile runtime preflight is available, but Metro still needs a successful start:check and real-device/simulator walkthrough. Latest local preflight found 8081/8082 EPERM on localhost, 0.0.0.0, and LAN host; EXPO_CHECK_PORT=19000 still stalled at env:load.',
+    '先排查本机 Node/网络权限、VPN/代理、安全软件或系统防火墙, 再执行 cd mobile && npm run runtime:check && npm run start:check，并用真机或模拟器验收。',
   ),
   gate(
     'real-ai',
