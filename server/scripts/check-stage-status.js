@@ -16,6 +16,11 @@ function packageHasScript(scriptName) {
   return Boolean(pkg.scripts?.[scriptName]);
 }
 
+function mobilePackageHasScript(scriptName) {
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'mobile', 'package.json'), 'utf8'));
+  return Boolean(pkg.scripts?.[scriptName]);
+}
+
 function gate(id, label, status, evidence, nextAction) {
   return { id, label, status, evidence, nextAction };
 }
@@ -120,6 +125,13 @@ const gates = [
     '移动端构建、权限、图标或合规材料变更时运行 release:contract。',
   ),
   gate(
+    'mobile-runtime-preflight',
+    '移动端运行预检',
+    mobilePackageHasScript('runtime:check') && mobilePackageHasScript('start:check') ? 'ready' : 'missing',
+    'cd mobile && npm run runtime:check checks Node, npm, dependencies, Expo CLI, Metro ports, and simulator/Expo Go API URL suggestions before start:check.',
+    '移动端依赖、Expo 启动脚本或端口诊断变更时运行 cd mobile && npm run runtime:check && npm run start:check。',
+  ),
+  gate(
     'provider-contract',
     '第三方服务商接入合同',
     packageHasScript('provider:contract') ? 'ready' : 'missing',
@@ -151,8 +163,8 @@ const gates = [
     'mobile-runtime',
     '移动端真实启动',
     'external-blocked',
-    'Expo static checks pass, but start:check previously timed out before Metro became reachable.',
-    '解决本机 Expo/Metro 启动问题后执行 cd mobile && npm run start:check，并用真机或模拟器验收。',
+    'Mobile runtime preflight is available, but Metro still needs a successful start:check and real-device/simulator walkthrough. Latest local preflight found Metro ports 8081/8082 blocked with EPERM.',
+    '先解决本机 Metro 端口监听问题, 再执行 cd mobile && npm run runtime:check && npm run start:check，并用真机或模拟器验收。',
   ),
   gate(
     'real-ai',
@@ -187,7 +199,7 @@ const output = {
   gates,
   nextStageFocus: [
     'Start PostgreSQL and run cd server && npm run verify:db.',
-    'Make mobile Metro reachable and run cd mobile && npm run start:check.',
+    'Make mobile Metro reachable and run cd mobile && npm run runtime:check && npm run start:check.',
     'Configure real LLM credentials, run ai:check, real eval:ai, and set LLM_READY=true only after review.',
     'Set internal deploy variables and run cd server && npm run deploy:check -- --profile internal.',
   ],
