@@ -26,13 +26,21 @@ npm run runtime:check
 
 该命令会检查 Node、npm、Docker、docker compose、psql、`DATABASE_URL`、`server/.env` 和根目录 `compose.yaml`。如果 Docker 或数据库配置缺失, 会直接给出下一步修复动作。
 
-4. 启动 PostgreSQL:
+4. 启动 PostgreSQL 或完整本地栈:
 
-项目根目录提供了 `compose.yaml`。如果本机已安装 Docker:
+项目根目录提供了 `compose.yaml`。如果本机已安装 Docker, 只启动数据库:
 
 ```bash
 npm run db:start:local
 ```
+
+如果希望同时启动 PostgreSQL 和后端 API, 在项目根目录执行:
+
+```bash
+docker compose up -d postgres server
+```
+
+后端健康检查地址为 `http://localhost:3000/health`。`server` 容器会等待 PostgreSQL 健康后执行 `npm run db:setup && npm run start`。
 
 `db:start:local` 会优先检查 `DATABASE_URL` 是否已可连接; 如果 Docker 可用, 会执行根目录 `compose.yaml` 启动 `postgres` 并等待 TCP 端口可达。如果本机没有 Docker, 脚本会输出 Docker Desktop、Homebrew PostgreSQL 和远程 PostgreSQL 三条可选修复路径。
 
@@ -201,6 +209,7 @@ npm run smoke:contract
 npm run ci:contract
 npm run env:contract
 npm run deploy:contract
+npm run stack:contract
 npm run stage:status
 npm run stage:report
 npm run release:contract
@@ -236,6 +245,7 @@ npm run eval:ai
 `npm run frontend:contract` 会校验 mobile、H5 原型和 admin 控制台的关键 API 调用、页面入口和鉴权策略, 确认前端联调面没有偏离后端合同。
 `npm run core:contract` 会校验主学习链路的数据库表、API 合同、移动端 API 客户端、移动端页面、H5 原型页面和 `smoke:api` 覆盖, 包括登录、提问、AI 引导、错题、复习和报告。
 `npm run smoke:contract` 会校验 `verify:db` 流程和 `smoke:api` 覆盖范围, 包括账号、学习主链路、安全拦截、Plus/支付、推送提醒、运营后台和隐私/账号删除。
+`npm run stack:contract` 会校验根目录 `compose.yaml` 中的 PostgreSQL + server 本地栈、后端 Dockerfile 运行资产和启动说明。
 `npm run stage:report` 会输出面向产品/项目管理的中文阶段汇报, 包括已完成证据、当前阻塞、配置缺口和下一步命令。
 `npm run ci:contract` 会校验 GitHub Actions 静态验证和数据库/API smoke workflow 的触发条件、Node 版本、依赖安装、PostgreSQL service 和关键验证命令, 避免主干质量门禁被误删。
 `npm run env:contract` 会校验 `.env.example` 的关键变量、安全默认值、正数配置和 `deploy:check` 覆盖范围, 避免内测/生产配置漂移。

@@ -2,6 +2,16 @@
 
 This directory contains environment templates for internal testing and production.
 
+## Local Docker Stack
+
+When Docker is available on the development machine, the repository root `compose.yaml` can start PostgreSQL and the Fastify API together:
+
+```bash
+docker compose up -d postgres server
+```
+
+The server container waits for PostgreSQL health, runs `npm run db:setup`, then starts the API on `http://localhost:3000`. Check `http://localhost:3000/health`, then run `cd server && npm run verify:db` from the host to prove the database/API smoke.
+
 ## Internal Test
 
 1. Copy `deploy/internal.env.example` into the target platform secret manager.

@@ -15,6 +15,7 @@ ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
+COPY scripts ./scripts
 COPY src ./src
 
 EXPOSE 3000

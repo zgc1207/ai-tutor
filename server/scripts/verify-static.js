@@ -49,6 +49,7 @@ run('npm run smoke:contract', 'npm', ['run', 'smoke:contract']);
 run('npm run ci:contract', 'npm', ['run', 'ci:contract']);
 run('npm run env:contract', 'npm', ['run', 'env:contract']);
 run('npm run deploy:contract', 'npm', ['run', 'deploy:contract']);
+run('npm run stack:contract', 'npm', ['run', 'stack:contract']);
 run('npm run stage:status', 'npm', ['run', 'stage:status']);
 run('npm run release:contract', 'npm', ['run', 'release:contract']);
 run('npm run provider:contract', 'npm', ['run', 'provider:contract']);

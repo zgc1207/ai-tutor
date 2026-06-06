@@ -17,5 +17,47 @@ services:
       timeout: 5s
       retries: 10
 
+  server:
+    build:
+      context: ./server
+    container_name: ai-tutor-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://ai_tutor:ai_tutor@postgres:5432/ai_tutor?schema=public"
+      PORT: 3000
+      ADMIN_TOKEN: "local-admin-token"
+      INTERNAL_TEST_INVITE_CODE: "local-invite-code"
+      AUTH_OTP_SECRET: "local-auth-otp-secret"
+      AUTH_OTP_DEV_MODE: "true"
+      AUTH_OTP_DELIVERY_PROVIDER: "dev"
+      ALLOW_LEGACY_USER_ID_AUTH: "true"
+      ALLOW_MOCK_LOGIN: "true"
+      CORS_ALLOWED_ORIGINS: ""
+      LLM_PROVIDER: "openai"
+      LLM_MODEL: "gpt-4o-mini"
+      LLM_API_KEY: ""
+      LLM_BASE_URL: "https://api.openai.com/v1"
+      LLM_READY: "false"
+      OCR_PROVIDER: "mock"
+      PAYMENT_PROVIDER: "dev"
+      PAYMENT_WEBHOOK_SECRET: "local-payment-webhook-secret"
+      PUSH_PROVIDER: "dev"
+      UPLOAD_STORAGE_PROVIDER: "local"
+      ALLOW_PUBLIC_UPLOAD_ACCESS: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ai_tutor_uploads:/app/uploads
+    command: ["sh", "-c", "npm run db:setup && npm run start"]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 volumes:
   ai_tutor_postgres_data:
+  ai_tutor_uploads:

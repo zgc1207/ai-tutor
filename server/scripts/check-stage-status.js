@@ -99,6 +99,13 @@ const gates = [
     '部署镜像、环境模板或部署流程变更时运行 deploy:contract。',
   ),
   gate(
+    'local-stack-contract',
+    '本地后端/数据库栈合同',
+    packageHasScript('stack:contract') && fileExists('compose.yaml') ? 'ready' : 'missing',
+    'npm run stack:contract checks compose PostgreSQL + server services, Dockerfile runtime assets, and stack runbook docs.',
+    'compose、Dockerfile 或本地栈启动方式变更时运行 stack:contract。',
+  ),
+  gate(
     'database-preflight',
     '数据库烟测前置诊断',
     packageHasScript('db:start:local') && packageHasScript('db:doctor') ? 'ready' : 'missing',
