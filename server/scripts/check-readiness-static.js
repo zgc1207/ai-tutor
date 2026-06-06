@@ -12,6 +12,7 @@ const REQUIRED_SCRIPTS = [
   'runtime:check',
   'deploy:check',
   'api:contract',
+  'frontend:contract',
   'core:contract',
   'schema:contract',
   'ci:contract',

@@ -41,6 +41,13 @@ const gates = [
     '接口新增或变更时同步 api-contract.json 并运行 api:contract。',
   ),
   gate(
+    'frontend-contract',
+    '前端联调合同',
+    packageHasScript('frontend:contract') ? 'ready' : 'missing',
+    'npm run frontend:contract checks mobile, H5 prototype, admin console API calls and auth policy against the frontend integration surface.',
+    '前端页面、API 客户端、admin 控制台或鉴权策略变更时运行 frontend:contract。',
+  ),
+  gate(
     'core-flow-contract',
     '主学习链路合同',
     packageHasScript('core:contract') ? 'ready' : 'missing',

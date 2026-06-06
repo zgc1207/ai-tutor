@@ -195,6 +195,7 @@ npm run prisma:generate
 npm run schema:contract
 npm run config:check
 npm run api:contract
+npm run frontend:contract
 npm run core:contract
 npm run ci:contract
 npm run env:contract
@@ -230,6 +231,7 @@ npm run eval:ai
 `npm run verify:static` 是无需数据库的一键验证, 会执行 JS 语法检查、Prisma Client 生成、Prisma schema 校验、Schema Contract、配置检查、API Contract、CI Contract、Env Contract、Deploy Contract、Stage Status、Release Contract、Provider Contract、Ops Contract、上传清理、AI 评测和静态 readiness。仓库也提供 GitHub Actions workflow `Server Static Verification`, 用于 PR 和 main 分支推送时自动执行同一检查。
 `npm run schema:contract` 会校验 Prisma schema 中 17 个核心业务模型、关键字段、枚举、查询索引和用户数据级联删除关系, 避免数据库表设计在迭代中漂移。
 `npm run api:contract` 会读取根目录 `api-contract.json`, 校验接口元数据、鉴权声明、移动端可用接口、管理端接口, 并确认每个声明的接口都已在 Fastify 服务中注册。
+`npm run frontend:contract` 会校验 mobile、H5 原型和 admin 控制台的关键 API 调用、页面入口和鉴权策略, 确认前端联调面没有偏离后端合同。
 `npm run core:contract` 会校验主学习链路的数据库表、API 合同、移动端 API 客户端、移动端页面、H5 原型页面和 `smoke:api` 覆盖, 包括登录、提问、AI 引导、错题、复习和报告。
 `npm run ci:contract` 会校验 GitHub Actions 静态验证和数据库/API smoke workflow 的触发条件、Node 版本、依赖安装、PostgreSQL service 和关键验证命令, 避免主干质量门禁被误删。
 `npm run env:contract` 会校验 `.env.example` 的关键变量、安全默认值、正数配置和 `deploy:check` 覆盖范围, 避免内测/生产配置漂移。
