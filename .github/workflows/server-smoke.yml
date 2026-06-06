@@ -89,4 +89,13 @@ jobs:
         run: npm ci
 
       - name: Run database and API verification
-        run: npm run verify:db
+        run: npm run verify:db | tee verify-db.log
+
+      - name: Assert main flow acceptance
+        run: grep -q "main_flow_acceptance:" verify-db.log
+
+      - name: Upload smoke verification log
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-verify-db-log
+          path: server/verify-db.log

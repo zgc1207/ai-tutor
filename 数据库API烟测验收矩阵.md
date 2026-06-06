@@ -139,6 +139,17 @@ main_flow_acceptance
 
 该输出表示登录、提问、AI 引导、错题、复习、报告五段主链路已经在同一次 smoke run 中完成。它必须建立在真实 PostgreSQL 可连接、迁移已执行、种子数据已存在的前提下。
 
+## CI 证据
+
+GitHub Actions 的 `Server API Smoke` workflow 会使用 PostgreSQL service 执行:
+
+```bash
+npm run verify:db | tee verify-db.log
+grep -q "main_flow_acceptance:" verify-db.log
+```
+
+如果 `main_flow_acceptance` 没有出现, CI 会失败。workflow 还会上传 `server-verify-db-log` artifact, 用于回看完整数据库/API smoke 日志。
+
 ## 当前限制
 
 - 当前本机没有 Docker/PostgreSQL, 所以还不能本地证明 `verify:db` 通过。
