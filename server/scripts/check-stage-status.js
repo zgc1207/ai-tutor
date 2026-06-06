@@ -41,6 +41,13 @@ const gates = [
     '接口新增或变更时同步 api-contract.json 并运行 api:contract。',
   ),
   gate(
+    'core-flow-contract',
+    '主学习链路合同',
+    packageHasScript('core:contract') ? 'ready' : 'missing',
+    'npm run core:contract checks auth, ask, AI guide, mistake, review, report models/routes/mobile/prototype/smoke coverage.',
+    '主学习链路的页面、接口、表结构或 smoke 变更时运行 core:contract。',
+  ),
+  gate(
     'schema-contract',
     '数据库 Schema 合同',
     packageHasScript('schema:contract') ? 'ready' : 'missing',
