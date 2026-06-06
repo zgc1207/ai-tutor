@@ -77,7 +77,7 @@ const gates = [
     'smoke-contract',
     '数据库/API smoke 覆盖合同',
     packageHasScript('smoke:contract') ? 'ready' : 'missing',
-    'npm run smoke:contract checks verify:db pipeline and runtime smoke coverage for auth, learning, safety, billing, notifications, ops, and privacy.',
+    'npm run smoke:contract checks verify:db pipeline, main_flow_acceptance output, and runtime smoke coverage for auth, learning, safety, billing, notifications, ops, and privacy.',
     '数据库/API smoke、verify:db 流程或主链路验收范围变更时运行 smoke:contract。',
   ),
   gate(

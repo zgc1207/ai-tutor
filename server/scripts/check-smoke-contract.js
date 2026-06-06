@@ -21,6 +21,8 @@ const SMOKE_CATEGORIES = [
     id: 'learning',
     label: '学习主链路',
     snippets: [
+      'MAIN_FLOW_ACCEPTANCE',
+      'main_flow_acceptance:',
       'ocr:',
       'upload_image:',
       'question:',
@@ -133,6 +135,7 @@ const docs = [
   read('server/README.md'),
   read('部署前检查清单.md'),
   read('项目状态看板.md'),
+  read('数据库API烟测验收矩阵.md'),
 ].join('\n');
 
 const checks = [];
@@ -164,6 +167,7 @@ const requiredDocs = [
   '数据库/API',
   'smoke:api',
   'PostgreSQL',
+  'main_flow_acceptance',
 ];
 const missingDocs = missingSnippets(docs, requiredDocs);
 checks.push(missingDocs.length

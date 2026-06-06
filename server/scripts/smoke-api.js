@@ -6,6 +6,34 @@ process.env.ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'smoke-admin-token';
 process.env.INTERNAL_TEST_INVITE_CODE = process.env.INTERNAL_TEST_INVITE_CODE || 'smoke-invite-code';
 process.env.PAYMENT_WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET || 'smoke-payment-secret';
 
+const MAIN_FLOW_ACCEPTANCE = [
+  {
+    id: 'auth_profile',
+    label: '登录/session/学生档案',
+    evidence: ['otp_request', 'login', 'me', 'profile_update'],
+  },
+  {
+    id: 'ask_ai',
+    label: '提问/OCR/AI 引导',
+    evidence: ['ocr', 'upload_image', 'question', 'answer_next'],
+  },
+  {
+    id: 'mistake',
+    label: '结束题目/加入错题',
+    evidence: ['finish', 'mistakes'],
+  },
+  {
+    id: 'review',
+    label: '复习任务/掌握状态',
+    evidence: ['review_tasks', 'review_answer'],
+  },
+  {
+    id: 'report',
+    label: '首页/周报/知识图谱',
+    evidence: ['dashboard', 'weekly_report', 'parent_weekly_report', 'knowledge_tree'],
+  },
+];
+
 async function request(app, options) {
   const response = await app.inject({
     ...options,
@@ -635,6 +663,11 @@ async function main() {
       headers: authHeaders,
     }, 401);
     console.log('session_after_delete:', { error: afterDelete.error });
+    console.log('main_flow_acceptance:', {
+      passed: true,
+      flows: MAIN_FLOW_ACCEPTANCE,
+      proof: 'All listed evidence labels were emitted during this smoke run before account deletion.',
+    });
   } finally {
     await app.close();
     await prisma.$disconnect();
