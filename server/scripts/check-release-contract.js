@@ -38,6 +38,7 @@ const REQUIRED_EAS_SNIPPETS = [
 ];
 
 const REQUIRED_MOBILE_SCRIPT_SNIPPETS = [
+  '"runtime:check"',
   '"start:check"',
   '"api:local"',
   '"build:android:preview"',
@@ -145,6 +146,7 @@ const output = {
   },
   checks,
   nextExternalChecks: [
+    'Run cd mobile && npm run runtime:check before attempting Expo startup.',
     'Run cd mobile && npm run start:check after Expo/Metro is stable.',
     'Build preview packages with cd mobile && npm run build:android:preview and build:ios:preview after EAS login and credentials are ready.',
     'Verify TestFlight/Android internal install, camera, gallery, notification permission, push token, login, OCR, AI answer, review, subscription, export, and deletion on real devices.',

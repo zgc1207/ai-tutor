@@ -16,6 +16,7 @@ const REQUIRED_FILES = [
   'src/device/native-features.js',
   'src/storage/session-store.js',
   'scripts/print-local-api.js',
+  'scripts/check-mobile-runtime.js',
   'scripts/check-expo-start.js',
   'scripts/start-expo-local.js',
   'README.md',
@@ -142,6 +143,7 @@ const jsFiles = [
   'src/device/native-features.js',
   'src/storage/session-store.js',
   'scripts/check-mobile-static.js',
+  'scripts/check-mobile-runtime.js',
   'scripts/check-expo-start.js',
   'scripts/print-local-api.js',
   'scripts/start-expo-local.js',
@@ -267,6 +269,28 @@ checks.push(missingStartDiagnostics.length
   : pass('mobile.startDiagnostics', {
       command: 'npm run start:check',
       snippets: requiredStartDiagnostics.length,
+    }));
+
+const mobileRuntimeSource = fs.readFileSync(path.join(ROOT, 'scripts/check-mobile-runtime.js'), 'utf8');
+const requiredRuntimeDiagnostics = [
+  'mobileRuntime.node',
+  'mobileRuntime.npm',
+  'mobileRuntime.requiredFiles',
+  'mobileRuntime.packages',
+  'mobileRuntime.expoCli',
+  'mobileRuntime.metroPorts',
+  'mobileRuntime.lanAddresses',
+  'expoGoDeviceUrls',
+];
+const missingRuntimeDiagnostics = requiredRuntimeDiagnostics.filter(snippet => !mobileRuntimeSource.includes(snippet));
+checks.push(pkg.scripts?.['runtime:check'] && !missingRuntimeDiagnostics.length
+  ? pass('mobile.runtimeDiagnostics', {
+      command: 'npm run runtime:check',
+      snippets: requiredRuntimeDiagnostics.length,
+    })
+  : fail('mobile.runtimeDiagnostics', {
+      script: pkg.scripts?.['runtime:check'],
+      missing: missingRuntimeDiagnostics,
     }));
 
 const counts = checks.reduce((acc, check) => {

@@ -9,6 +9,7 @@
     "start:local": "node scripts/start-expo-local.js",
     "start:local:offline": "node scripts/start-expo-local.js --offline",
     "start:check": "node scripts/check-expo-start.js",
+    "runtime:check": "node scripts/check-mobile-runtime.js",
     "ios": "expo start --ios",
     "android": "expo start --android",
     "web": "expo start --web",
