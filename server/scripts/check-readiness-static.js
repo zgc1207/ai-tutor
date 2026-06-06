@@ -21,6 +21,7 @@ const REQUIRED_SCRIPTS = [
   'provider:contract',
   'ops:contract',
   'db:setup',
+  'db:doctor',
   'db:check',
   'smoke:api',
   'verify:db',

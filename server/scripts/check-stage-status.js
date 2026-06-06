@@ -71,6 +71,13 @@ const gates = [
     '部署镜像、环境模板或部署流程变更时运行 deploy:contract。',
   ),
   gate(
+    'database-preflight',
+    '数据库烟测前置诊断',
+    packageHasScript('db:doctor') ? 'ready' : 'missing',
+    'npm run db:doctor checks DATABASE_URL parsing, migrations, Docker hints, and PostgreSQL TCP reachability before verify:db.',
+    '数据库连接、compose 或迁移流程变更时先运行 db:doctor，再运行 verify:db。',
+  ),
+  gate(
     'release-contract',
     '内测包/上架准备合同',
     packageHasScript('release:contract') && fileExists('mobile/eas.json') && fileExists('合规上架检查清单.md') ? 'ready' : 'missing',

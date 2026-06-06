@@ -23,6 +23,7 @@
     "provider:contract": "node scripts/check-provider-contract.js",
     "ops:contract": "node scripts/check-ops-contract.js",
     "db:setup": "prisma migrate deploy && node prisma/seed.js",
+    "db:doctor": "node scripts/check-db-doctor.js",
     "db:check": "node scripts/check-db.js",
     "smoke:api": "node scripts/smoke-api.js",
     "verify:db": "node scripts/verify-db.js",

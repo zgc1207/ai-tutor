@@ -20,6 +20,7 @@ function run(label, command, args) {
   }
 }
 
+run('npm run db:doctor', 'npm', ['run', 'db:doctor']);
 run('npm run db:setup', 'npm', ['run', 'db:setup']);
 run('npm run db:check', 'npm', ['run', 'db:check']);
 run('npm run retention:cleanup', 'npm', ['run', 'retention:cleanup']);
