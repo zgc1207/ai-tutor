@@ -159,6 +159,7 @@ checks.push(syntaxFailures.length
 
 const appSource = fs.readFileSync(path.join(ROOT, 'App.js'), 'utf8');
 const clientSource = fs.readFileSync(path.join(ROOT, 'src/api/client.js'), 'utf8');
+const expoStartCheckSource = fs.readFileSync(path.join(ROOT, 'scripts/check-expo-start.js'), 'utf8');
 const apiContract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
 const mobileContractEndpoints = apiContract.endpoints.filter(endpoint => endpoint.clients?.includes('mobile'));
 function clientPathSnippets(endpointPath) {
@@ -249,6 +250,23 @@ checks.push(appSource.includes('enterDemoMode')
   ? pass('mobile.demoExperience', { entry: '体验演示' })
   : fail('mobile.demoExperience', {
       message: 'The mobile app should keep a visible demo entry for product review without backend setup.'
+    }));
+
+const requiredStartDiagnostics = [
+  'EXPO_DEBUG',
+  'CI',
+  'probedPorts',
+  'expoStartLog',
+  'outputTail',
+  'childPid',
+  'Metro is reachable on port',
+];
+const missingStartDiagnostics = requiredStartDiagnostics.filter(snippet => !expoStartCheckSource.includes(snippet));
+checks.push(missingStartDiagnostics.length
+  ? fail('mobile.startDiagnostics', { missing: missingStartDiagnostics })
+  : pass('mobile.startDiagnostics', {
+      command: 'npm run start:check',
+      snippets: requiredStartDiagnostics.length,
     }));
 
 const counts = checks.reduce((acc, check) => {

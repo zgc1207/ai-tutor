@@ -16,20 +16,23 @@ const output = [];
 function remember(chunk) {
   const text = chunk.toString();
   output.push(text);
-  if (output.join('').length > 8000) output.splice(0, output.length - 20);
+  while (output.join('').length > 12000) output.shift();
 }
 
-function probe() {
+function probePort(candidatePort) {
   return new Promise(resolve => {
-    const request = http.get({ host: '127.0.0.1', port, path: '/', timeout: 1000 }, response => {
+    const request = http.get({ host: '127.0.0.1', port: candidatePort, path: '/', timeout: 1000 }, response => {
       response.resume();
-      resolve(response.statusCode >= 200 && response.statusCode < 500);
+      resolve({
+        ok: response.statusCode >= 200 && response.statusCode < 500,
+        statusCode: response.statusCode,
+      });
     });
     request.on('timeout', () => {
       request.destroy();
-      resolve(false);
+      resolve({ ok: false, error: 'timeout' });
     });
-    request.on('error', () => resolve(false));
+    request.on('error', error => resolve({ ok: false, error: error.code || error.message }));
   });
 }
 
@@ -49,10 +52,31 @@ function readExpoLogEvents() {
     .slice(-20);
 }
 
+function unique(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function candidatePorts(events) {
+  return unique([
+    Number(port),
+    ...events
+      .map(event => Number(event.port))
+      .filter(Number.isFinite),
+  ]);
+}
+
 function diagnose(events) {
   const eventNames = events.map(event => event._e).filter(Boolean);
+  const outputText = output.join('');
+  if (/Another process is running|already running|address already in use|EADDRINUSE/i.test(outputText)) {
+    return 'Expo appears blocked by an existing process or occupied port.';
+  }
+  if (/Installing|Downloading|DevTools|dependency|doctor/i.test(outputText)) {
+    return 'Expo emitted dependency or DevTools activity before Metro became reachable.';
+  }
   if (eventNames.includes('metro:instantiate')) {
-    return 'Expo reached Metro initialization, but the expected HTTP port was not reachable.';
+    const actualPorts = unique(events.map(event => event.port)).join(', ');
+    return `Expo reached Metro initialization, but no probed HTTP port was reachable. Metro event ports: ${actualPorts || 'unknown'}.`;
   }
   if (eventNames.includes('devserver:start')) {
     return 'Expo started dev server setup, but did not reach Metro initialization.';
@@ -63,9 +87,16 @@ function diagnose(events) {
   return 'Expo did not emit enough startup events for a precise diagnosis.';
 }
 
-const child = spawn(process.execPath, [startScript, '--offline', '--port', port], {
+const childArgs = [startScript, '--offline', '--port', port];
+const child = spawn(process.execPath, childArgs, {
   cwd: projectRoot,
   stdio: ['ignore', 'pipe', 'pipe'],
+  env: {
+    ...process.env,
+    CI: '1',
+    EXPO_DEBUG: '1',
+    FORCE_COLOR: '0',
+  },
 });
 
 child.stdout.on('data', remember);
@@ -79,16 +110,22 @@ async function finish(ok, message) {
 
   if (!child.killed) child.kill('SIGTERM');
 
+  const events = readExpoLogEvents();
   const details = {
     ok,
     port: Number(port),
     elapsedMs: Date.now() - startedAt,
     message,
-    diagnosis: diagnose(readExpoLogEvents()),
-    expoEvents: readExpoLogEvents().map(event => ({
+    diagnosis: diagnose(events),
+    command: `${process.execPath} ${childArgs.join(' ')}`,
+    childPid: child.pid,
+    expoStartLog,
+    probedPorts: candidatePorts(events),
+    expoEvents: events.map(event => ({
       event: event._e,
       port: event.port,
       host: event.host,
+      ageMs: Date.now() - event._t,
     })),
     outputTail: output.join('').split('\n').slice(-20).join('\n'),
   };
@@ -104,10 +141,14 @@ child.on('exit', code => {
 });
 
 const interval = setInterval(async () => {
-  if (await probe()) {
-    clearInterval(interval);
-    await finish(true, 'Metro is reachable.');
-    return;
+  const events = readExpoLogEvents();
+  for (const candidatePort of candidatePorts(events)) {
+    const result = await probePort(candidatePort);
+    if (result.ok) {
+      clearInterval(interval);
+      await finish(true, `Metro is reachable on port ${candidatePort}.`);
+      return;
+    }
   }
 
   if (Date.now() - startedAt > timeoutMs) {

@@ -69,7 +69,11 @@ npm run start:local:offline
 npm run start:check
 ```
 
-`start:check` 会用网络受限模式启动 Expo, 在超时前轮询本机端口, 并输出结构化结果和 Expo startup log 里的最后阶段事件。它用于定位“命令看起来启动了, 但 Metro 实际没有监听”的问题。
+`start:check` 会用网络受限模式启动 Expo, 在超时前轮询本机端口, 并输出结构化结果、启动命令、子进程 PID、实际探测端口、Expo startup log 路径、最近阶段事件和原始输出尾部。它用于定位“命令看起来启动了, 但 Metro 实际没有监听”的问题; 如果 Expo 事件里出现了不同端口, 脚本也会一起探测。
+
+当前已知本机诊断:
+
+- 2026-06-06 执行 `npm run start:check`, 30 秒后仍未探测到 Metro; Expo startup log 只到 `env:load`, 说明当前机器卡在 dev server setup 之前。该问题仍需继续排查本机 Expo/Node/网络环境或换真机/模拟器环境复测。
 
 连接本机后端:
 
